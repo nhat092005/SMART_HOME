@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Home - Professional</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar (Dark) -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>NexusHub</span>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-room="living-room">
+                    <i class="fa-solid fa-couch"></i>
+                    <span>Living Room</span>
+                    <span class="badge" id="badge-living-room">2</span>
+                </li>
+                <li data-room="bedroom">
+                    <i class="fa-solid fa-bed"></i>
+                    <span>Bedroom</span>
+                    <span class="badge" id="badge-bedroom">1</span>
+                </li>
+                <li data-room="kitchen">
+                    <i class="fa-solid fa-kitchen-set"></i>
+                    <span>Kitchen</span>
+                    <span class="badge" id="badge-kitchen">0</span>
+                </li>
+                <li data-room="server-room">
+                    <i class="fa-solid fa-server"></i>
+                    <span>Server Room</span>
+                    <span class="badge" id="badge-server-room">3</span>
+                </li>
+                <li onclick="window.location.href='settings.html'" style="margin-top: auto;">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </li>
+            </ul>
+
+            <div class="user-profile" id="user-profile">
+                <div class="avatar">A</div>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-on-dark);">Admin</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted-on-dark); cursor: pointer;"
+                        id="logout-btn">Logout</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-title">
+                    <h1 id="current-room">Living Room</h1>
+                    <p id="date-display">Loading...</p>
+                </div>
+                <div class="header-actions">
+                    <div class="status-badge">
+                        <i class="fa-solid fa-wifi"></i>
+                        <span>Online</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary);"
+                            id="clock-display">--:--</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Grid -->
+            <div class="dashboard-scroll">
+                <div class="dashboard-grid">
+
+                    <!-- Metric Cards (Top Row) -->
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Temperature</span>
+                            <div class="metric-icon icon-blue">
+                                <i class="fa-solid fa-temperature-half"></i>
+                            </div>
+                        </div>
+                        <div class="metric-value"><span id="temp-val">--</span>°</div>
+                        <div class="metric-sub">Optimal Range</div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Humidity</span>
+                            <div class="metric-icon icon-green">
+                                <i class="fa-solid fa-droplet"></i>
+                            </div>
+                        </div>
+                        <div class="metric-value"><span id="humid-val">--</span>%</div>
+                        <div class="metric-sub">Comfortable</div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Light Level</span>
+                            <div class="metric-icon icon-yellow">
+                                <i class="fa-solid fa-sun"></i>
+                            </div>
+                        </div>
+                        <div class="metric-value"><span id="light-val">--</span></div>
+                        <div class="metric-sub">Lux</div>
+                    </div>
+
+                    <div class="card metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Energy Usage</span>
+                            <div class="metric-icon icon-purple">
+                                <i class="fa-solid fa-bolt"></i>
+                            </div>
+                        </div>
+                        <div class="metric-value">4.2</div>
+                        <div class="metric-sub">kWh Today</div>
+                    </div>
+
+                    <!-- Chart Section -->
+                    <div class="card chart-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Temperature History</h3>
+                            <select
+                                style="padding: 0.25rem 0.5rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.875rem;">
+                                <option>Last 24 Hours</option>
+                                <option>Last 7 Days</option>
+                            </select>
+                        </div>
+                        <div style="flex: 1; position: relative;">
+                            <canvas id="tempChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Controls Section -->
+                    <div class="card controls-card">
+                        <div class="card-header">
+                            <h3 class="card-title">Quick Controls</h3>
+                        </div>
+
+                        <div class="control-item" id="card-lights">
+                            <div class="control-info">
+                                <span class="control-name">Main Lights</span>
+                                <span class="control-status" id="status-lights">Off</span>
+                            </div>
+                            <i class="fa-solid fa-lightbulb" style="font-size: 1.25rem;"></i>
+                            <input type="checkbox" id="toggle-lights" style="display:none;">
+                        </div>
+
+                        <div class="control-item" id="card-fan">
+                            <div class="control-info">
+                                <span class="control-name">Ceiling Fan</span>
+                                <span class="control-status" id="status-fan">Off</span>
+                            </div>
+                            <i class="fa-solid fa-fan" style="font-size: 1.25rem;"></i>
+                            <input type="checkbox" id="toggle-fan" style="display:none;">
+                        </div>
+
+                        <div class="control-item" id="card-ac">
+                            <div class="control-info">
+                                <span class="control-name">Air Conditioner</span>
+                                <span class="control-status" id="status-ac">Off</span>
+                            </div>
+                            <i class="fa-solid fa-snowflake" style="font-size: 1.25rem;"></i>
+                            <input type="checkbox" id="toggle-ac" style="display:none;">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import './script.js';
+
+        // Bridge UI clicks to hidden checkboxes
+        document.addEventListener('DOMContentLoaded', () => {
+            ['lights', 'fan', 'ac'].forEach(device => {
+                const card = document.getElementById(`card-${device}`);
+                const checkbox = document.getElementById(`toggle-${device}`);
+
+                if (card && checkbox) {
+                    card.addEventListener('click', () => {
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.dispatchEvent(new Event('change'));
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
