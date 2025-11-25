@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Smart Home</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="logo">
+                <i class="fa-solid fa-layer-group"></i>
+                <span>NexusHub</span>
+            </div>
+            <ul class="nav-links">
+                <li onclick="window.location.href='index.html'">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li class="active">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </li>
+            </ul>
+            <div class="user-profile">
+                <div class="avatar">A</div>
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 0.875rem; font-weight: 600; color: var(--text-on-dark);">Admin</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted-on-dark);">Settings</span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-title">
+                    <h1>System Settings</h1>
+                    <p>Configure your Smart Home Hub</p>
+                </div>
+            </header>
+
+            <div class="dashboard-scroll">
+                <div class="settings-container">
+
+                    <!-- Firebase Config Section -->
+                    <div class="card" style="margin-bottom: 2rem;">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fa-brands fa-google"
+                                    style="margin-right: 0.5rem; color: var(--warning);"></i> Firebase Configuration
+                            </h3>
+                        </div>
+                        <p style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 1.5rem;">
+                            Enter your Firebase project details to enable real-time synchronization.
+                        </p>
+
+                        <form id="firebase-form">
+                            <div class="form-group">
+                                <label class="form-label">API Key</label>
+                                <input type="text" class="form-input" id="apiKey" placeholder="AIzaSy..." required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Auth Domain</label>
+                                <input type="text" class="form-input" id="authDomain"
+                                    placeholder="project-id.firebaseapp.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Database URL</label>
+                                <input type="text" class="form-input" id="databaseURL"
+                                    placeholder="https://project-id.firebaseio.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Project ID</label>
+                                <input type="text" class="form-input" id="projectId" placeholder="project-id" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa-solid fa-save" style="margin-right: 0.5rem;"></i> Save Configuration
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- User Management Section -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title"><i class="fa-solid fa-users"
+                                    style="margin-right: 0.5rem; color: var(--primary);"></i> User Management</h3>
+                        </div>
+
+                        <div
+                            style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding: 1rem; background: var(--bg-body); border-radius: var(--radius-md);">
+                            <div class="avatar"
+                                style="background: var(--primary); width: 48px; height: 48px; font-size: 1.25rem;">A
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; color: var(--text-primary);">Admin User</div>
+                                <div style="font-size: 0.875rem; color: var(--text-secondary);">admin@smarthome.com
+                                </div>
+                            </div>
+                            <div class="status-badge" style="margin-left: auto;">Admin</div>
+                        </div>
+
+                        <button class="btn btn-outline">
+                            <i class="fa-solid fa-plus" style="margin-right: 0.5rem;"></i> Add New User
+                        </button>
+                    </div>
+
+                    <!-- System Info -->
+                    <div
+                        style="margin-top: 2rem; text-align: center; color: var(--text-secondary); font-size: 0.875rem;">
+                        <p>NexusHub Version 2.1.0 (Pro)</p>
+                        <p style="margin-top: 0.25rem;"><i class="fa-solid fa-circle-check"
+                                style="color: var(--success);"></i> System Online</p>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        // Simple logic to load/save settings
+        document.addEventListener('DOMContentLoaded', () => {
+            const config = JSON.parse(localStorage.getItem('firebaseConfig') || '{}');
+            if (config.apiKey) document.getElementById('apiKey').value = config.apiKey;
+            if (config.authDomain) document.getElementById('authDomain').value = config.authDomain;
+            if (config.databaseURL) document.getElementById('databaseURL').value = config.databaseURL;
+            if (config.projectId) document.getElementById('projectId').value = config.projectId;
+
+            document.getElementById('firebase-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newConfig = {
+                    apiKey: document.getElementById('apiKey').value,
+                    authDomain: document.getElementById('authDomain').value,
+                    databaseURL: document.getElementById('databaseURL').value,
+                    projectId: document.getElementById('projectId').value
+                };
+                localStorage.setItem('firebaseConfig', JSON.stringify(newConfig));
+                alert('Configuration Saved! Reloading...');
+                window.location.reload();
+            });
+        });
+    </script>
+</body>
+
+</html>
