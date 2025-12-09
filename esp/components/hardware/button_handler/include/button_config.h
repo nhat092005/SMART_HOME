@@ -1,6 +1,6 @@
 /**
  * @file button_config.h
- * 
+ *
  * @brief Button Handler Configuration from Kconfig
  */
 
@@ -8,16 +8,34 @@
 #define BUTTON_CONFIG_H
 
 /* Includes ------------------------------------------------------------------*/
+
+#include "driver/gpio.h"
 #include "sdkconfig.h"
 
-/* Exported defines ----------------------------------------------------------*/
-#define BUTTON_MAX_HANDLERS     4
-#define BUTTON_DEVICE           CONFIG_BUTTON_DEVICE
-#define BUTTON_INTERVAL         CONFIG_BUTTON_INTERVAL
-#define BUTTON_LIGHT            CONFIG_BUTTON_LIGHT
-#define BUTTON_FAN              CONFIG_BUTTON_FAN
+/* Exported types --------------------------------------------------------*/
 
-// Button timing defaults (in milliseconds)
-#define DEBOUNCE_TIME_MS        CONFIG_DEBOUNCE_TIME_MS
+/**
+ * @brief Button type enumeration
+ */
+typedef enum
+{
+    BUTTON_MODE = 0, //!< Mode button
+    BUTTON_WIFI,     //!< WiFi button
+    BUTTON_LIGHT,    //!< Light button
+    BUTTON_FAN,      //!< Fan button
+    BUTTON_MAX
+} button_type_t;
+
+/* Exported defines --------------------------------------------------------*/
+
+/* Timing definitions */
+#define BUTTON_POLL_INTERVAL_MS CONFIG_BUTTON_POLL_INTERVAL_MS
+#define DEBOUNCE_TIME_MS CONFIG_DEBOUNCE_TIME_MS
+
+/* Button pin definitions */
+#define BUTTON_MODE_PIN ((gpio_num_t)CONFIG_BUTTON_MODE)
+#define BUTTON_WIFI_PIN ((gpio_num_t)CONFIG_BUTTON_WIFI)
+#define BUTTON_LIGHT_PIN ((gpio_num_t)CONFIG_BUTTON_LIGHT)
+#define BUTTON_FAN_PIN ((gpio_num_t)CONFIG_BUTTON_FAN)
 
 #endif /* BUTTON_CONFIG_H */

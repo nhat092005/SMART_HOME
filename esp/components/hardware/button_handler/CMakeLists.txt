@@ -1,9 +1,6 @@
-file(GLOB_RECURSE app_srcs *.c)
-
 idf_component_register(
-    SRCS ${app_srcs}
+    SRCS "button_handler.c"
     INCLUDE_DIRS "include"
     REQUIRES
     driver
-    esp_timer
 )
