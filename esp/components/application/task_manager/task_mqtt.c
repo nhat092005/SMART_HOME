@@ -99,7 +99,12 @@ static void task_mqtt_publish_sensor_data(void);
 /**
  * @brief Publish current device state
  */
-static void task_mqtt_publish_current_state(void);
+void task_mqtt_publish_current_state(void);
+
+/**
+ * @brief Sync device states from hardware to MQTT state
+ */
+static void task_mqtt_sync_device_states(void);
 
 /**
  * @brief Publish device info
@@ -137,7 +142,6 @@ static const char *task_mqtt_get_current_ip(void);
  */
 void task_mqtt_on_connected(void)
 {
-    isMQTT = true;
     ESP_LOGI(TAG, "MQTT Connected");
 
     // Publish info on connection (per spec: Boot + network change)
@@ -149,7 +153,6 @@ void task_mqtt_on_connected(void)
  */
 void task_mqtt_on_disconnected(void)
 {
-    isMQTT = false;
     ESP_LOGW(TAG, "MQTT Disconnected");
 }
 
@@ -178,7 +181,7 @@ void task_mqtt_on_data_publish(uint32_t timestamp, float *temp, float *hum, int 
     *hum = data.humidity;
     *light = data.light;
 
-    ESP_LOGD(TAG, "Data: T=%.1f°C H=%.1f%% L=%d lux", data.temperature, data.humidity, data.light);
+    ESP_LOGD(TAG, "Data: T=%.2f°C H=%.2f%% L=%d lux", data.temperature, data.humidity, data.light);
 }
 
 /**
@@ -192,7 +195,7 @@ void task_mqtt_on_data_publish(uint32_t timestamp, float *temp, float *hum, int 
  */
 void task_mqtt_on_state_publish(uint32_t timestamp, int *mode, int *fan, int *light, int *ac)
 {
-    // State is already copied from device_state
+    // State is already synced and copied from device_state
     ESP_LOGD(TAG, "State: mode=%d fan=%d light=%d ac=%d", *mode, *fan, *light, *ac);
 }
 
@@ -268,20 +271,34 @@ void task_mqtt_on_set_devices(const char *cmd_id, int fan, int light, int ac)
         xSemaphoreGive(state_mutex);
     }
 
+    esp_err_t ret;
+
     // Control hardware
     if (fan >= 0)
     {
-        device_control_set_state(DEVICE_FAN, fan ? DEVICE_ON : DEVICE_OFF);
+        ret = device_control_set_state(DEVICE_FAN, fan ? DEVICE_ON : DEVICE_OFF);
+        if (ret != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Failed to set fan state: %s", esp_err_to_name(ret));
+        }
     }
 
     if (light >= 0)
     {
-        device_control_set_state(DEVICE_LIGHT, light ? DEVICE_ON : DEVICE_OFF);
+        ret = device_control_set_state(DEVICE_LIGHT, light ? DEVICE_ON : DEVICE_OFF);
+        if (ret != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Failed to set light state: %s", esp_err_to_name(ret));
+        }
     }
 
     if (ac >= 0)
     {
-        device_control_set_state(DEVICE_AC, ac ? DEVICE_ON : DEVICE_OFF);
+        ret = device_control_set_state(DEVICE_AC, ac ? DEVICE_ON : DEVICE_OFF);
+        if (ret != ESP_OK)
+        {
+            ESP_LOGE(TAG, "Failed to set AC state: %s", esp_err_to_name(ret));
+        }
     }
 
     // Publish updated state
@@ -333,10 +350,34 @@ void task_mqtt_on_set_interval(const char *cmd_id, int interval)
         }
 
         ESP_LOGI(TAG, "Data interval: %d seconds", interval);
+
+        // Publish updated state
+        task_mqtt_publish_current_state();
     }
     else
     {
         ESP_LOGW(TAG, "Invalid interval: %d (must be %d-%d)", interval, MIN_INTERVAL, MAX_INTERVAL);
+    }
+}
+
+/**
+ * @brief Handle set_timestamp command
+ *
+ * @param[in] cmd_id Command ID
+ * @param[in] timestamp Unix timestamp
+ */
+void task_mqtt_on_set_timestamp(const char *cmd_id, uint32_t timestamp)
+{
+    ESP_LOGI(TAG, "[%s] set_timestamp: %lu", cmd_id, (unsigned long)timestamp);
+
+    esp_err_t ret = sensor_manager_set_timestamp(timestamp);
+    if (ret == ESP_OK)
+    {
+        ESP_LOGI(TAG, "Timestamp updated successfully");
+    }
+    else
+    {
+        ESP_LOGE(TAG, "Failed to set timestamp: %s", esp_err_to_name(ret));
     }
 }
 
@@ -398,6 +439,7 @@ esp_err_t task_mqtt_init(void)
     mqtt_callback_register_on_set_devices(task_mqtt_on_set_devices);
     mqtt_callback_register_on_set_mode(task_mqtt_on_set_mode);
     mqtt_callback_register_on_set_interval(task_mqtt_on_set_interval);
+    mqtt_callback_register_on_set_timestamp(task_mqtt_on_set_timestamp);
     mqtt_callback_register_on_get_status(task_mqtt_on_get_status);
     mqtt_callback_register_on_reboot(task_mqtt_on_reboot);
     mqtt_callback_register_on_factory_reset(task_mqtt_on_factory_reset);
@@ -486,13 +528,24 @@ static void task_mqtt_publish_sensor_data(void)
 /**
  * @brief Publish current device state
  */
-static void task_mqtt_publish_current_state(void)
+void task_mqtt_publish_current_state(void)
 {
+    // Check MQTT connection first to avoid unnecessary work
+    if (!mqtt_manager_is_connected())
+    {
+        ESP_LOGD(TAG, "MQTT not connected, skipping state publish");
+        return;
+    }
+
+    // Sync device states from hardware BEFORE taking mutex
+    task_mqtt_sync_device_states();
+
     uint32_t timestamp = task_mqtt_get_timestamp();
 
     int mode = 0, fan = 0, light = 0, ac = 0, interval = 0;
 
-    if (xSemaphoreTake(state_mutex, portMAX_DELAY) == pdTRUE)
+    // Use timeout instead of portMAX_DELAY
+    if (xSemaphoreTake(state_mutex, pdMS_TO_TICKS(100)) == pdTRUE)
     {
         mode = device_state.mode;
         interval = device_state.interval_sec;
@@ -504,9 +557,48 @@ static void task_mqtt_publish_current_state(void)
         mqtt_callback_invoke_state_publish(timestamp, &mode, &fan, &light, &ac);
 
         xSemaphoreGive(state_mutex);
+
+        // Publish after releasing mutex
+        mqtt_manager_publish_state(timestamp, mode, interval, fan, light, ac);
+    }
+    else
+    {
+        ESP_LOGW(TAG, "Cannot take state_mutex for publishing, skipping");
+    }
+}
+
+/**
+ * @brief Sync device states from hardware to MQTT state
+ */
+static void task_mqtt_sync_device_states(void)
+{
+    device_state_t fan_state, light_state, ac_state;
+
+    // Read current hardware states with timeout to prevent blocking
+    if (device_control_get_state(DEVICE_FAN, &fan_state) != ESP_OK ||
+        device_control_get_state(DEVICE_LIGHT, &light_state) != ESP_OK ||
+        device_control_get_state(DEVICE_AC, &ac_state) != ESP_OK)
+    {
+        ESP_LOGW(TAG, "Failed to read device states, skipping sync");
+        return;
     }
 
-    mqtt_manager_publish_state(timestamp, mode, interval, fan, light, ac);
+    // Update internal state with timeout (100ms max)
+    if (xSemaphoreTake(state_mutex, pdMS_TO_TICKS(100)) == pdTRUE)
+    {
+        // Sync mode from mode_manager
+        device_state.mode = (mode_manager_get_mode() == MODE_ON) ? 1 : 0;
+
+        // Sync device states from hardware
+        device_state.fan = (fan_state == DEVICE_ON) ? 1 : 0;
+        device_state.light = (light_state == DEVICE_ON) ? 1 : 0;
+        device_state.ac = (ac_state == DEVICE_ON) ? 1 : 0;
+        xSemaphoreGive(state_mutex);
+    }
+    else
+    {
+        ESP_LOGW(TAG, "Cannot take state_mutex, skipping sync");
+    }
 }
 
 /**
@@ -529,12 +621,10 @@ static void task_mqtt_publish_info_data(void)
  */
 static void task_mqtt_delayed_reboot_task(void *pvParameters)
 {
-    const char *cmd_id = (const char *)pvParameters;
 
-    ESP_LOGW(TAG, "[%s] Reboot in 2 seconds...", cmd_id);
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    ESP_LOGW(TAG, "Reboot in 1 seconds...");
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
-    ESP_LOGW(TAG, "Rebooting now!");
     esp_restart();
 
     vTaskDelete(NULL);
@@ -545,15 +635,13 @@ static void task_mqtt_delayed_reboot_task(void *pvParameters)
  */
 static void task_mqtt_delayed_factory_reset_task(void *pvParameters)
 {
-    const char *cmd_id = (const char *)pvParameters;
 
-    ESP_LOGW(TAG, "[%s] Factory reset in 2 seconds...", cmd_id);
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    ESP_LOGW(TAG, "Factory reset in 1 seconds...");
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     // Erase NVS flash
     nvs_flash_erase();
 
-    ESP_LOGW(TAG, "Rebooting after factory reset!");
     esp_restart();
 
     vTaskDelete(NULL);
@@ -594,11 +682,18 @@ static void task_mqtt_run(void *pvParameters)
                          (unsigned long)(current_interval_ms / 1000));
             }
 
-            // Publish sensor data
+            // Publish sensor data only when MODE is ON (LED is on)
             TickType_t data_elapsed = now - last_data_publish;
             if (data_elapsed >= pdMS_TO_TICKS(current_interval_ms))
             {
-                task_mqtt_publish_sensor_data();
+                if (isModeON)
+                {
+                    task_mqtt_publish_sensor_data();
+                }
+                else
+                {
+                    ESP_LOGD(TAG, "Skipping sensor data publish - Mode is OFF");
+                }
                 last_data_publish = now;
             }
 
