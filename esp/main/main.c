@@ -23,7 +23,7 @@ static const char *TAG = "MAIN";
  */
 void app_main(void)
 {
-    ESP_LOGI(TAG, "Smart Home Application Starting...");
+    ESP_LOGI(TAG, "Smart Home Application");
 
     // Initialize system components
     task_init();
