@@ -15,11 +15,15 @@
 
 /**
  * @brief Start the web server
+ *
+ * @return ESP_OK on success, error code otherwise
  */
 esp_err_t webserver_start(void);
 
 /**
  * @brief Stop the web server
+ *
+ * @return ESP_OK on success, error code otherwise
  */
 esp_err_t webserver_stop(void);
 
