@@ -104,7 +104,7 @@ char *json_helper_create_state(uint32_t timestamp, int mode, int interval, int f
  *
  * @note Format: {"timestamp": 1701388800, "id": "esp_01", "ssid": "MyHomeWiFi",
  *               "ip": "192.168.1.100", "broker": "mqtt://192.168.1.20:1883",
- *               "firmware": "1.0.0"}
+ *               "firmware": "1.0"}
  */
 char *json_helper_create_info(uint32_t timestamp, const char *device_id, const char *ssid,
                               const char *ip, const char *broker, const char *firmware);

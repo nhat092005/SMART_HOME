@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include <string.h>
+#include <math.h>
 #include <time.h>
 
 /* Private variables ---------------------------------------------------------*/
@@ -107,8 +108,13 @@ char *json_helper_create_data(uint32_t timestamp, float temperature, float humid
     }
 
     cJSON_AddNumberToObject(root, "timestamp", timestamp);
-    cJSON_AddNumberToObject(root, "temperature", temperature);
-    cJSON_AddNumberToObject(root, "humidity", humidity);
+
+    // Round temperature and humidity to 2 decimal places
+    double temp_rounded = round(temperature * 100.0) / 100.0;
+    double hum_rounded = round(humidity * 100.0) / 100.0;
+
+    cJSON_AddNumberToObject(root, "temperature", temp_rounded);
+    cJSON_AddNumberToObject(root, "humidity", hum_rounded);
     cJSON_AddNumberToObject(root, "light", light);
 
     char *json_str = cJSON_Print(root);
