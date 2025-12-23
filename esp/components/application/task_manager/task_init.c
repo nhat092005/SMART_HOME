@@ -21,8 +21,9 @@ extern void task_button_mode_pressed(button_type_t button);
 extern void task_button_wifi_pressed(button_type_t button);
 extern void task_button_light_pressed(button_type_t button);
 extern void task_button_fan_pressed(button_type_t button);
+extern void task_button_ac_pressed(button_type_t button);
 
-extern void wifi_event_callback(wifi_manager_event_t event, void *data);
+extern void task_wifi_event_callback(wifi_manager_event_t event, void *data);
 extern void task_mode_change_event_callback(device_mode_t old_mode, device_mode_t new_mode);
 
 /* Private functions Prototype -----------------------------------------------*/
@@ -53,6 +54,11 @@ static void task_init_hardware_protocol(void);
 static void task_init_wifi(void);
 
 /**
+ * @brief Initialize MQTT components
+ */
+static void task_init_mqtt(void);
+
+/**
  * @brief Initialize Mode Manager
  */
 static void task_init_mode_manager(void);
@@ -73,11 +79,14 @@ void task_init(void)
     // Initialize hardware protocol components
     task_init_hardware_protocol();
 
+    // Initialize Mode Manager
+    task_init_mode_manager();
+
     // Initialize WiFi components
     task_init_wifi();
 
-    // Initialize Mode Manager
-    task_init_mode_manager();
+    // Initialize MQTT components
+    task_init_mqtt();
 }
 
 /* Private functions --------------------------------------------------------*/
@@ -130,6 +139,7 @@ static void task_init_button(void)
     button_handler_set_callback(BUTTON_WIFI, task_button_wifi_pressed);
     button_handler_set_callback(BUTTON_LIGHT, task_button_light_pressed);
     button_handler_set_callback(BUTTON_FAN, task_button_fan_pressed);
+    button_handler_set_callback(BUTTON_AC, task_button_ac_pressed);
 }
 
 /**
@@ -139,6 +149,23 @@ static void task_init_hardware_protocol(void)
 {
     // Initialize Sensor Manager
     sensor_manager_init(I2C_MASTER_SDA_PIN, I2C_MASTER_SCL_PIN);
+}
+
+/**
+ * @brief Initialize Mode Manager
+ */
+static void task_init_mode_manager(void)
+{
+    esp_err_t ret;
+
+    // Initialize Mode Manager
+    ret = mode_manager_init();
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Mode Manager initialize failed: %s", esp_err_to_name(ret));
+    }
+
+    mode_manager_register_change_callback(task_mode_change_event_callback);
 }
 
 /**
@@ -184,18 +211,19 @@ static void task_init_wifi(void)
 }
 
 /**
- * @brief Initialize Mode Manager
+ * @brief Initialize MQTT components
  */
-static void task_init_mode_manager(void)
+void task_init_mqtt(void)
 {
     esp_err_t ret;
 
-    // Initialize Mode Manager
-    ret = mode_manager_init();
+    // Initialize MQTT manager
+    ret = mqtt_manager_init();
+
     if (ret != ESP_OK)
     {
-        ESP_LOGE(TAG, "Mode Manager initialize failed: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "MQTT Manager initialize failed: %s", esp_err_to_name(ret));
     }
 
-    mode_manager_register_change_callback(task_mode_change_event_callback);
+    task_mqtt_init();
 }
