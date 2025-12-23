@@ -83,6 +83,15 @@ esp_err_t sensor_manager_get_status(sensor_status_t *status);
 esp_err_t sensor_manager_get_timestamp(uint32_t *timestamp);
 
 /**
+ * @brief Set timestamp to DS3231 RTC
+ *
+ * @param[in] timestamp Unix timestamp in seconds
+ *
+ * @return ESP_OK on success, error code otherwise
+ */
+esp_err_t sensor_manager_set_timestamp(uint32_t timestamp);
+
+/**
  * @brief Deinitialize sensor manager and free resources
  *
  * @return ESP_OK on success, error code otherwise

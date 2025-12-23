@@ -13,24 +13,27 @@
 #include "esp_log.h"
 #include <string.h>
 
-/* Private variables ----------------------------------------------------------*/
+/* Exported variables ---------------------------------------------------------*/
 
-static const char *TAG = "SENSOR_MANAGER";
+// Initialization flags (exported for sensor_reader.c)
+bool initialized = false;
 
 // I2C device descriptors (exported for sensor_reader.c)
 ds3231_t ds3231_dev;
 sht3x_t sht3x_dev;
 bh1750_t bh1750_dev;
 
-// Initialization flags (exported for sensor_reader.c)
-bool initialized = false;
-
+// Sensor readiness flags (exported for sensor_reader.c)
 bool ds3231_ready = false;
 bool sht3x_ready = false;
 bool bh1750_ready = false;
 
+/* Private variables ----------------------------------------------------------*/
+
+static const char *TAG = "SENSOR_MANAGER";
+
 // I2C configuration
-static int i2c_port = 0; // I2C port 0
+static int i2c_port = 0; //!< I2C port 0
 
 /* Exported functions --------------------------------------------------------*/
 
@@ -39,7 +42,7 @@ static int i2c_port = 0; // I2C port 0
  */
 esp_err_t sensor_manager_init_default(void)
 {
-    ESP_LOGI(TAG, "Initializing sensor manager with default pins");
+    ESP_LOGI(TAG, "Initializing Sensor Manager with default pins");
     return sensor_manager_init(I2C_MASTER_SDA_PIN, I2C_MASTER_SCL_PIN);
 }
 
@@ -50,11 +53,11 @@ esp_err_t sensor_manager_init(gpio_num_t sda, gpio_num_t scl)
 {
     esp_err_t ret;
 
-    ESP_LOGI(TAG, "Initializing sensor manager (SDA=%d, SCL=%d)", sda, scl);
+    ESP_LOGI(TAG, "Initializing Sensor Manager (SDA=%d, SCL=%d)", sda, scl);
 
     if (initialized)
     {
-        ESP_LOGW(TAG, "Sensor manager already initialized");
+        ESP_LOGW(TAG, "Sensor Manager already initialized");
         return ESP_OK;
     }
 
@@ -148,7 +151,7 @@ esp_err_t sensor_manager_init(gpio_num_t sda, gpio_num_t scl)
 
     initialized = true;
 
-    ESP_LOGI(TAG, "Sensor manager initialized (DS3231=%d, SHT3x=%d, BH1750=%d)",
+    ESP_LOGI(TAG, "Sensor Manager initialized (DS3231=%d, SHT3x=%d, BH1750=%d)",
              ds3231_ready, sht3x_ready, bh1750_ready);
 
     return ESP_OK;
@@ -239,5 +242,29 @@ esp_err_t sensor_manager_get_timestamp(uint32_t *timestamp)
         return ret;
     }
 
+    return ESP_OK;
+}
+
+/**
+ * @brief Set timestamp to DS3231 RTC
+ */
+esp_err_t sensor_manager_set_timestamp(uint32_t timestamp)
+{
+    if (!ds3231_ready)
+    {
+        ESP_LOGW(TAG, "DS3231 not ready");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ESP_LOGI(TAG, "Setting timestamp: %lu", (unsigned long)timestamp);
+
+    esp_err_t ret = ds3231_set_timestamp(&ds3231_dev, timestamp);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to set timestamp to DS3231: %s", esp_err_to_name(ret));
+        return ret;
+    }
+
+    ESP_LOGI(TAG, "Timestamp set successfully");
     return ESP_OK;
 }
