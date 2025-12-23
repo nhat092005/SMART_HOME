@@ -30,12 +30,12 @@ static int g_dns_socket = -1;
  */
 typedef struct __attribute__((packed))
 {
-    uint16_t id;
-    uint16_t flags;
-    uint16_t questions;
-    uint16_t answers;
-    uint16_t authority;
-    uint16_t additional;
+    uint16_t id;         //!< Identification
+    uint16_t flags;      //!< Flags
+    uint16_t questions;  //!< Number of questions
+    uint16_t answers;    //!< Number of answers
+    uint16_t authority;  //!< Number of authority records
+    uint16_t additional; //!< Number of additional records
 } dns_header_t;
 
 /* Private function prototypes -----------------------------------------------*/
@@ -107,13 +107,16 @@ esp_err_t dns_server_stop(void)
  */
 static void dns_server_task(void *pvParameters)
 {
+    // Create UDP socket
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
+
     socklen_t client_addr_len = sizeof(client_addr);
     uint8_t rx_buffer[DNS_MAX_PACKET_SIZE];
     uint8_t tx_buffer[DNS_MAX_PACKET_SIZE];
 
     g_dns_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+
     if (g_dns_socket < 0)
     {
         ESP_LOGE(TAG, "Failed to create socket");
@@ -122,6 +125,7 @@ static void dns_server_task(void *pvParameters)
         return;
     }
 
+    // Bind socket to DNS port
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(DNS_SERVER_PORT);

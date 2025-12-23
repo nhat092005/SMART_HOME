@@ -56,9 +56,11 @@ typedef struct
     bool initialized;               //!< Initialization status
 } wifi_manager_context_t;
 
-/* External variables --------------------------------------------------------*/
+/* Exported variables --------------------------------------------------------*/
 
-extern bool isWiFi;
+bool isWiFi = false; //!< Global WiFi connection state indicator
+
+/* External variables --------------------------------------------------------*/
 
 extern bool isWiFiConnecting;
 
@@ -582,6 +584,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         }
 
         g_wifi_ctx.state = WIFI_STATE_DISCONNECTED;
+        isWiFi = false; // Update global state
 
         // Check retry count and increment atomically
         bool should_retry = (g_wifi_ctx.retry_count < WIFI_RECONNECT_MAX);
@@ -642,6 +645,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base, int32_t e
         ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&event->ip_info.ip));
         g_wifi_ctx.retry_count = 0;
         g_wifi_ctx.state = WIFI_STATE_CONNECTED;
+
+        isWiFi = true; // Update global state
+
         xEventGroupSetBits(g_wifi_ctx.event_group, WIFI_CONNECTED_BIT);
         wifi_event_callback_t callback = g_wifi_ctx.callback;
         xSemaphoreGive(g_wifi_ctx.mutex);
