@@ -1,10 +1,11 @@
 idf_component_register(
-    SRCS 
-    "task_status.c" 
-    "task_wifi.c" 
-    "task_button.c" 
+    SRCS
+    "task_status.c"
+    "task_wifi.c"
+    "task_button.c"
     "task_init.c"
     "task_mode.c"
+    "task_mqtt.c"
     INCLUDE_DIRS "include"
     REQUIRES
     nvs_flash
@@ -13,5 +14,9 @@ idf_component_register(
     status_led
     mode_manager
     sensor_manager
+    sensor_reader
     wifi_manager
+    mqtt_manager
+    mqtt_callback
+    json_helper
 )

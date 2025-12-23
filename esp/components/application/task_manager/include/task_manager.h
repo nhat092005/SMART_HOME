@@ -16,6 +16,7 @@
 #include "mode_manager.h"
 #include "sensor_manager.h"
 #include "wifi_manager.h"
+#include "mqtt_manager.h"
 
 /* External variables ---------------------------------------------------------*/
 
@@ -44,7 +45,7 @@ void task_button_wifi_pressed(button_type_t button);
  *
  * @param[in] button Button type
  */
-void task_button_device_pressed(button_type_t button);
+void task_button_mode_pressed(button_type_t button);
 
 /**
  * @brief Button light callback functions
@@ -59,6 +60,13 @@ void task_button_light_pressed(button_type_t button);
  * @param[in] button Button type
  */
 void task_button_fan_pressed(button_type_t button);
+
+/**
+ * @brief Button ac callback implementations
+ *
+ * @param[in] button Button type
+ */
+void task_button_ac_pressed(button_type_t button);
 
 /**
  * @brief Task polling LED
@@ -76,6 +84,11 @@ void task_wifi_event_callback(wifi_manager_event_t event, void *data);
 /**
  * @brief Initialize WiFi connecting task
  */
-esp_err_t task_wifi_set_wifi_connecting_init();
+esp_err_t task_wifi_set_wifi_connecting_init(void);
+
+/**
+ * @brief Initialize MQTT task and register callbacks
+ */
+esp_err_t task_mqtt_init(void);
 
 #endif /* TASK_MANAGER_H */
