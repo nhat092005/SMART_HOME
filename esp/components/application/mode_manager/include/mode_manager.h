@@ -12,10 +12,19 @@
 #include "esp_err.h"
 #include <stdbool.h>
 
+/* Private defines -----------------------------------------------------------*/
+#define FIRMWARE_VERSION "1.0.0" // Firmware version
+
+#define DEFAULT_INTERVAL 5       // Default publish interval in seconds
+#define MIN_INTERVAL 5           // Minimum interval
+#define MAX_INTERVAL 3600        // Maximum interval (1 hour)
+#define STATE_BACKUP_INTERVAL 60 // Publish state every 60 seconds
+
 /* External variables --------------------------------------------------------*/
 extern bool isModeON;
+extern unsigned int interval_seconds;
 
-/* Exported types --------------------------------------------------------*/
+/* Exported types ------------------------------------------------------------*/
 
 /**
  * @brief Device operation modes

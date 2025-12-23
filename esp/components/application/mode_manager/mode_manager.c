@@ -29,6 +29,8 @@ static device_mode_t current_mode = DEFAULT_MODE;
 static mode_change_callback_t change_callback = NULL;
 static bool initialized = false;
 
+unsigned int interval_seconds = DEFAULT_INTERVAL;
+
 /* Private function prototypes -----------------------------------------------*/
 
 /**
