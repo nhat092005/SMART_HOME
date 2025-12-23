@@ -36,7 +36,6 @@ void task_wifi_event_callback(wifi_manager_event_t event, void *data)
     {
     case WIFI_EVENT_DISCONNECTED:
         ESP_LOGW(TAG, "Disconnected from network");
-        isWiFi = false;
         break;
 
     case WIFI_EVENT_CONNECTING:
@@ -53,7 +52,6 @@ void task_wifi_event_callback(wifi_manager_event_t event, void *data)
         esp_netif_ip_info_t ip_info;
         if (wifi_manager_get_ip_info(&ip_info) == ESP_OK)
         {
-            isWiFi = true;
             isWiFiConnecting = false;
             ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&ip_info.ip));
             ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
@@ -141,8 +139,10 @@ static void task_wifi_set_wifi_connecting_task(void *pvParameters)
     {
         if (isWiFiConnecting)
         {
+            // Toggle LED blink state
             isWiFi = !isWiFi;
         }
-        vTaskDelay(pdMS_TO_TICKS(500));
+
+        vTaskDelay(pdMS_TO_TICKS(250));
     }
 }
