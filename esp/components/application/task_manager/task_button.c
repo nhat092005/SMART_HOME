@@ -53,3 +53,12 @@ void task_button_fan_pressed(button_type_t button)
     ESP_LOGI(TAG, "Fan button pressed");
     device_control_toggle(DEVICE_FAN);
 }
+
+/**
+ * @brief Button ac callback implementations
+ */
+void task_button_ac_pressed(button_type_t button)
+{
+    ESP_LOGI(TAG, "AC button pressed");
+    device_control_toggle(DEVICE_AC);
+}
