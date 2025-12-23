@@ -34,6 +34,13 @@ extern bool isMQTT;
 void task_init(void);
 
 /**
+ * @brief Initialize button processing task and queue
+ *
+ * @return ESP_OK on success, error code otherwise
+ */
+esp_err_t task_button_init(void);
+
+/**
  * @brief Button interval callback functions
  *
  * @param[in] button Button type
@@ -70,6 +77,8 @@ void task_button_ac_pressed(button_type_t button);
 
 /**
  * @brief Task polling LED
+ *
+ * @return ESP_OK on success, error code otherwise
  */
 esp_err_t task_status_set_init(void);
 
@@ -83,12 +92,23 @@ void task_wifi_event_callback(wifi_manager_event_t event, void *data);
 
 /**
  * @brief Initialize WiFi connecting task
+ *
+ * @return ESP_OK on success, error code otherwise
  */
 esp_err_t task_wifi_set_wifi_connecting_init(void);
 
 /**
  * @brief Initialize MQTT task and register callbacks
+ *
+ * @return ESP_OK on success, error code otherwise
  */
 esp_err_t task_mqtt_init(void);
+
+/**
+ * @brief Publish current device state to MQTT
+ *
+ * @note This function should be called when device state changes to update MQTT broker
+ */
+void task_mqtt_publish_current_state(void);
 
 #endif /* TASK_MANAGER_H */
