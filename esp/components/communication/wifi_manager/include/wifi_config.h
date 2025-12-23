@@ -33,4 +33,4 @@
 #define NVS_KEY_PASSWORD       "password"
 #define NVS_KEY_PROVISIONED    "provisioned"
 
-#endif
+#endif /* WIFI_CONFIG_H */

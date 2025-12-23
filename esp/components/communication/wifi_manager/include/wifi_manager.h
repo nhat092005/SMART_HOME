@@ -153,4 +153,4 @@ esp_err_t wifi_manager_clear_credentials(void);
  */
 esp_err_t wifi_manager_deinit(void);
 
-#endif
+#endif /* WIFI_MANAGER_H */

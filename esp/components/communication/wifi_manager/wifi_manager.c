@@ -31,11 +31,11 @@
  */
 typedef enum
 {
-    WIFI_STATE_IDLE,
-    WIFI_STATE_CONNECTING,
-    WIFI_STATE_CONNECTED,
-    WIFI_STATE_DISCONNECTED,
-    WIFI_STATE_PROVISIONING
+    WIFI_STATE_IDLE,         //!< Idle state
+    WIFI_STATE_CONNECTING,   //!< Connecting state
+    WIFI_STATE_CONNECTED,    //!< Connected state
+    WIFI_STATE_DISCONNECTED, //!< Disconnected state
+    WIFI_STATE_PROVISIONING  //!< Provisioning state
 } wifi_state_t;
 
 /**
@@ -43,17 +43,17 @@ typedef enum
  */
 typedef struct
 {
-    wifi_state_t state;
-    esp_netif_t *sta_netif;
-    esp_netif_t *ap_netif;
-    EventGroupHandle_t event_group;
-    SemaphoreHandle_t mutex;
-    wifi_event_callback_t callback;
-    uint8_t retry_count;
-    char ssid[32];
-    char password[64];
-    bool provisioned;
-    bool initialized;
+    wifi_state_t state;             //!< Current WiFi state
+    esp_netif_t *sta_netif;         //!< Station network interface
+    esp_netif_t *ap_netif;          //!< Access point network interface
+    EventGroupHandle_t event_group; //!< Event group for WiFi events
+    SemaphoreHandle_t mutex;        //!< Mutex for thread-safe access
+    wifi_event_callback_t callback; //!< Event callback
+    uint8_t retry_count;            //!< Retry count for connection attempts
+    char ssid[32];                  //!< WiFi SSID
+    char password[64];              //!< WiFi password
+    bool provisioned;               //!< Provisioning status
+    bool initialized;               //!< Initialization status
 } wifi_manager_context_t;
 
 /* External variables --------------------------------------------------------*/
