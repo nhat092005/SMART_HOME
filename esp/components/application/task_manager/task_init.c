@@ -11,20 +11,24 @@
 #include "nvs_flash.h"
 #include "wifi_manager.h"
 
-/* PRIVATE VARIABLES --------------------------------------------------------*/
+/* PRIVATE VARIABLES ---------------------------------------------------------*/
 
 static const char *TAG = "TASK_INIT";
 
-/* External button callback functions (implemented in main.c) ---------------*/
+/* External button callback functions ----------------------------------------*/
 
+// Button callback functions
 extern void task_button_mode_pressed(button_type_t button);
 extern void task_button_wifi_pressed(button_type_t button);
 extern void task_button_light_pressed(button_type_t button);
 extern void task_button_fan_pressed(button_type_t button);
 extern void task_button_ac_pressed(button_type_t button);
 
-extern void task_wifi_event_callback(wifi_manager_event_t event, void *data);
+// Mode change event callback function
 extern void task_mode_change_event_callback(device_mode_t old_mode, device_mode_t new_mode);
+
+// WiFi event callback function
+extern void task_wifi_event_callback(wifi_manager_event_t event, void *data);
 
 /* Private functions Prototype -----------------------------------------------*/
 
@@ -134,6 +138,9 @@ static void task_init_button(void)
     // Initialize Button Handler
     button_handler_init();
 
+    // Initialize button processing task and queue
+    task_button_init();
+
     // Set button callbacks
     button_handler_set_callback(BUTTON_MODE, task_button_mode_pressed);
     button_handler_set_callback(BUTTON_WIFI, task_button_wifi_pressed);
@@ -205,7 +212,6 @@ static void task_init_wifi(void)
     }
     else
     {
-        ESP_LOGI(TAG, "No WiFi credentials found");
         ESP_LOGI(TAG, "Open browser: http://192.168.4.1");
     }
 }
