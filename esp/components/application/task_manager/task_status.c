@@ -13,11 +13,11 @@
 
 #define CHECK_INTERVAL_MS 50
 
-/* Exported variables --------------------------------------------------------*/
+/* External variables --------------------------------------------------------*/
 
-bool isModeON = false;
-bool isWiFi = false;
-bool isMQTT = false;
+extern bool isModeON; //!< Defined in mode_manager.c
+extern bool isWiFi;   //!< Defined in wifi_manager.c
+extern bool isMQTT;   //!< Defined in mqtt_manager.c
 
 /* Private variables ---------------------------------------------------------*/
 
