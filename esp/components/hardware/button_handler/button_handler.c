@@ -35,7 +35,10 @@ static button_t buttons[BUTTON_MAX] = {
     {BUTTON_MODE_PIN, "MODE", NULL, false, 0},   //!< Mode button
     {BUTTON_WIFI_PIN, "WIFI", NULL, false, 0},   //!< WiFi button
     {BUTTON_LIGHT_PIN, "LIGHT", NULL, false, 0}, //!< Light button
-    {BUTTON_FAN_PIN, "FAN", NULL, false, 0}};    //!< Fan button
+    {BUTTON_FAN_PIN, "FAN", NULL, false, 0},     //!< Fan button
+    {BUTTON_AC_PIN, "AC", NULL, false, 0}        //!< AC button
+};
+
 static volatile bool initialized = false;
 static TaskHandle_t poll_task_handle = NULL;
 

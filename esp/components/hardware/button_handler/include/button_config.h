@@ -23,6 +23,7 @@ typedef enum
     BUTTON_WIFI,     //!< WiFi button
     BUTTON_LIGHT,    //!< Light button
     BUTTON_FAN,      //!< Fan button
+    BUTTON_AC,       //!< AC button
     BUTTON_MAX
 } button_type_t;
 
@@ -37,5 +38,6 @@ typedef enum
 #define BUTTON_WIFI_PIN ((gpio_num_t)CONFIG_BUTTON_WIFI)
 #define BUTTON_LIGHT_PIN ((gpio_num_t)CONFIG_BUTTON_LIGHT)
 #define BUTTON_FAN_PIN ((gpio_num_t)CONFIG_BUTTON_FAN)
+#define BUTTON_AC_PIN ((gpio_num_t)CONFIG_BUTTON_AC)
 
 #endif /* BUTTON_CONFIG_H */
