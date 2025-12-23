@@ -24,20 +24,20 @@ typedef enum
     BUTTON_LIGHT,    //!< Light button
     BUTTON_FAN,      //!< Fan button
     BUTTON_AC,       //!< AC button
-    BUTTON_MAX
+    BUTTON_MAX       //!< Total number of buttons
 } button_type_t;
 
 /* Exported defines --------------------------------------------------------*/
 
 /* Timing definitions */
-#define BUTTON_POLL_INTERVAL_MS CONFIG_BUTTON_POLL_INTERVAL_MS
-#define DEBOUNCE_TIME_MS CONFIG_DEBOUNCE_TIME_MS
+#define BUTTON_POLL_INTERVAL_MS     CONFIG_BUTTON_POLL_INTERVAL_MS
+#define DEBOUNCE_TIME_MS            CONFIG_DEBOUNCE_TIME_MS
 
 /* Button pin definitions */
-#define BUTTON_MODE_PIN ((gpio_num_t)CONFIG_BUTTON_MODE)
-#define BUTTON_WIFI_PIN ((gpio_num_t)CONFIG_BUTTON_WIFI)
-#define BUTTON_LIGHT_PIN ((gpio_num_t)CONFIG_BUTTON_LIGHT)
-#define BUTTON_FAN_PIN ((gpio_num_t)CONFIG_BUTTON_FAN)
-#define BUTTON_AC_PIN ((gpio_num_t)CONFIG_BUTTON_AC)
+#define BUTTON_MODE_PIN             ((gpio_num_t)CONFIG_BUTTON_MODE)
+#define BUTTON_WIFI_PIN             ((gpio_num_t)CONFIG_BUTTON_WIFI)
+#define BUTTON_LIGHT_PIN            ((gpio_num_t)CONFIG_BUTTON_LIGHT)
+#define BUTTON_FAN_PIN              ((gpio_num_t)CONFIG_BUTTON_FAN)
+#define BUTTON_AC_PIN               ((gpio_num_t)CONFIG_BUTTON_AC)
 
 #endif /* BUTTON_CONFIG_H */

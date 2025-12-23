@@ -8,6 +8,7 @@
 
 #include "button_handler.h"
 #include "esp_log.h"
+#include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -176,8 +177,16 @@ static void button_poll_task(void *arg)
 {
     const uint8_t debounce_threshold = DEBOUNCE_TIME_MS / BUTTON_POLL_INTERVAL_MS;
 
+    // Subscribe to task watchdog
+    esp_task_wdt_add(NULL);
+
+    ESP_LOGI(TAG, "Button poll task subscribed to watchdog");
+
     while (initialized)
     {
+        // Reset watchdog at start of each iteration
+        esp_task_wdt_reset();
+
         for (int i = 0; i < BUTTON_MAX; i++)
         {
             bool current = (gpio_get_level(buttons[i].pin) == 0); // Active low
@@ -222,5 +231,7 @@ static void button_poll_task(void *arg)
         vTaskDelay(pdMS_TO_TICKS(BUTTON_POLL_INTERVAL_MS));
     }
 
+    // Unsubscribe from watchdog before deleting task
+    esp_task_wdt_delete(NULL);
     vTaskDelete(NULL);
 }
