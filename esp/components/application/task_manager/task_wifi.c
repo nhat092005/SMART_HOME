@@ -58,6 +58,18 @@ void task_wifi_event_callback(wifi_manager_event_t event, void *data)
             ESP_LOGI(TAG, "Got IP: " IPSTR, IP2STR(&ip_info.ip));
             ESP_LOGI(TAG, "Gateway: " IPSTR, IP2STR(&ip_info.gw));
             ESP_LOGI(TAG, "Netmask: " IPSTR, IP2STR(&ip_info.netmask));
+
+            // Start MQTT client after getting IP
+            ESP_LOGI(TAG, "MQTT Client starting...");
+            esp_err_t ret = mqtt_manager_start();
+            if (ret == ESP_OK)
+            {
+                ESP_LOGI(TAG, "MQTT client started successfully");
+            }
+            else
+            {
+                ESP_LOGE(TAG, "Failed to start MQTT client: %d", ret);
+            }
         }
         break;
     }
@@ -88,15 +100,15 @@ void task_wifi_event_callback(wifi_manager_event_t event, void *data)
 /**
  * @brief Initialize WiFi connecting task
  */
-esp_err_t task_wifi_set_wifi_connecting_init()
+esp_err_t task_wifi_set_wifi_connecting_init(void)
 {
     if (running)
     {
-        ESP_LOGW(TAG, "Task wifi connecting already initialized");
+        ESP_LOGW(TAG, "Task WiFi connecting already initialized");
         return ESP_OK;
     }
 
-    // Start wifi connecting task
+    // Start WiFi connecting task
     running = true;
     BaseType_t result = xTaskCreate(
         task_wifi_set_wifi_connecting_task,
@@ -108,13 +120,13 @@ esp_err_t task_wifi_set_wifi_connecting_init()
 
     if (result != pdPASS)
     {
-        ESP_LOGE(TAG, "Failed to create wifi connecting task");
+        ESP_LOGE(TAG, "Failed to create WiFi connecting task");
         running = false;
         task_handle = NULL;
         return ESP_FAIL;
     }
 
-    ESP_LOGI(TAG, "Task wifi connecting initialized");
+    ESP_LOGI(TAG, "Task WiFi connecting initialized");
     return ESP_OK;
 }
 
