@@ -65,6 +65,7 @@ typedef struct
     gpio_num_t scl_io_num;   //!< GPIO number for SCL
     uint32_t clk_speed;      //!< I2C clock speed in Hz
     SemaphoreHandle_t mutex; //!< Mutex for thread-safe access
+    void *dev_handle;        //!< I2C device handle (i2c_master_dev_handle_t)
 } i2c_dev_t;
 
 /* Exported functions --------------------------------------------------------*/
@@ -80,6 +81,15 @@ typedef struct
  * @return ESP_OK on success, otherwise error code
  */
 esp_err_t i2c_bus_init(int port, gpio_num_t sda_gpio, gpio_num_t scl_gpio, uint32_t clk_speed);
+
+/**
+ * @brief Initialize I2C device handle (add device to bus)
+ *
+ * @param[in] dev Device descriptor
+ *
+ * @return ESP_OK on success
+ */
+esp_err_t i2c_dev_init(i2c_dev_t *dev);
 
 /**
  * @brief Create mutex for I2C device

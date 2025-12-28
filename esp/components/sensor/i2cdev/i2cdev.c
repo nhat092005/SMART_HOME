@@ -56,6 +56,48 @@ esp_err_t i2c_bus_init(int port, gpio_num_t sda_gpio, gpio_num_t scl_gpio, uint3
 }
 
 /**
+ * @brief Initialize I2C device handle (add device to bus once)
+ */
+esp_err_t i2c_dev_init(i2c_dev_t *dev)
+{
+    if (!dev)
+    {
+        ESP_LOGE(TAG, "Device descriptor is NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (dev->dev_handle != NULL)
+    {
+        ESP_LOGW(TAG, "Device 0x%02x already initialized", dev->addr);
+        return ESP_OK;
+    }
+
+    if (i2c_bus_handle == NULL)
+    {
+        ESP_LOGE(TAG, "I2C bus not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    // Create device configuration
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = dev->addr,
+        .scl_speed_hz = dev->clk_speed,
+    };
+
+    esp_err_t ret = i2c_master_bus_add_device(i2c_bus_handle, &dev_cfg,
+                                               (i2c_master_dev_handle_t *)&dev->dev_handle);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to add device 0x%02x: %s", dev->addr, esp_err_to_name(ret));
+        return ret;
+    }
+
+    ESP_LOGI(TAG, "Device 0x%02x added successfully (speed: %lu Hz)", dev->addr, dev->clk_speed);
+    return ESP_OK;
+}
+
+/**
  * @brief Create mutex for I2C device
  */
 esp_err_t i2c_dev_create_mutex(i2c_dev_t *dev)
@@ -112,28 +154,19 @@ esp_err_t i2c_dev_read_reg(i2c_dev_t *dev, uint8_t reg, void *data, size_t len)
         return ESP_ERR_INVALID_ARG;
     }
 
-    I2C_DEV_TAKE_MUTEX(dev);
-
-    // Create device handle
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = dev->addr,
-        .scl_speed_hz = dev->clk_speed,
-    };
-
-    i2c_master_dev_handle_t dev_handle;
-    esp_err_t ret = i2c_master_bus_add_device(i2c_bus_handle, &dev_cfg, &dev_handle);
-    if (ret != ESP_OK)
+    if (dev->dev_handle == NULL)
     {
-        ESP_LOGE(TAG, "Failed to add device: %s", esp_err_to_name(ret));
-        I2C_DEV_GIVE_MUTEX(dev);
-        return ret;
+        ESP_LOGE(TAG, "Device 0x%02x not initialized", dev->addr);
+        return ESP_ERR_INVALID_STATE;
     }
 
-    // Write register address then read data
-    ret = i2c_master_transmit_receive(dev_handle, &reg, 1, (uint8_t *)data, len, I2C_TIMEOUT_MS);
+    I2C_DEV_TAKE_MUTEX(dev);
 
-    i2c_master_bus_rm_device(dev_handle);
+    // Use existing device handle
+    i2c_master_dev_handle_t dev_handle = (i2c_master_dev_handle_t)dev->dev_handle;
+
+    // Write register address then read data
+    esp_err_t ret = i2c_master_transmit_receive(dev_handle, &reg, 1, (uint8_t *)data, len, I2C_TIMEOUT_MS);
 
     if (ret != ESP_OK)
     {
@@ -162,29 +195,21 @@ esp_err_t i2c_dev_write_reg(i2c_dev_t *dev, uint8_t reg, const void *data, size_
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (dev->dev_handle == NULL)
+    {
+        ESP_LOGE(TAG, "Device 0x%02x not initialized", dev->addr);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     I2C_DEV_TAKE_MUTEX(dev);
 
-    // Create device handle
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = dev->addr,
-        .scl_speed_hz = dev->clk_speed,
-    };
-
-    i2c_master_dev_handle_t dev_handle;
-    esp_err_t ret = i2c_master_bus_add_device(i2c_bus_handle, &dev_cfg, &dev_handle);
-    if (ret != ESP_OK)
-    {
-        ESP_LOGE(TAG, "Failed to add device: %s", esp_err_to_name(ret));
-        I2C_DEV_GIVE_MUTEX(dev);
-        return ret;
-    }
+    // Use existing device handle
+    i2c_master_dev_handle_t dev_handle = (i2c_master_dev_handle_t)dev->dev_handle;
 
     // Prepare buffer: register address + data
     uint8_t *write_buf = malloc(len + 1);
     if (!write_buf)
     {
-        i2c_master_bus_rm_device(dev_handle);
         I2C_DEV_GIVE_MUTEX(dev);
         return ESP_ERR_NO_MEM;
     }
@@ -192,10 +217,9 @@ esp_err_t i2c_dev_write_reg(i2c_dev_t *dev, uint8_t reg, const void *data, size_
     write_buf[0] = reg;
     memcpy(write_buf + 1, data, len);
 
-    ret = i2c_master_transmit(dev_handle, write_buf, len + 1, I2C_TIMEOUT_MS);
+    esp_err_t ret = i2c_master_transmit(dev_handle, write_buf, len + 1, I2C_TIMEOUT_MS);
 
     free(write_buf);
-    i2c_master_bus_rm_device(dev_handle);
 
     if (ret != ESP_OK)
     {
@@ -224,27 +248,18 @@ esp_err_t i2c_dev_read(i2c_dev_t *dev, void *data, size_t len)
         return ESP_ERR_INVALID_ARG;
     }
 
-    I2C_DEV_TAKE_MUTEX(dev);
-
-    // Create device handle
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = dev->addr,
-        .scl_speed_hz = dev->clk_speed,
-    };
-
-    i2c_master_dev_handle_t dev_handle;
-    esp_err_t ret = i2c_master_bus_add_device(i2c_bus_handle, &dev_cfg, &dev_handle);
-    if (ret != ESP_OK)
+    if (dev->dev_handle == NULL)
     {
-        ESP_LOGE(TAG, "Failed to add device: %s", esp_err_to_name(ret));
-        I2C_DEV_GIVE_MUTEX(dev);
-        return ret;
+        ESP_LOGE(TAG, "Device 0x%02x not initialized", dev->addr);
+        return ESP_ERR_INVALID_STATE;
     }
 
-    ret = i2c_master_receive(dev_handle, (uint8_t *)data, len, I2C_TIMEOUT_MS);
+    I2C_DEV_TAKE_MUTEX(dev);
 
-    i2c_master_bus_rm_device(dev_handle);
+    // Use existing device handle
+    i2c_master_dev_handle_t dev_handle = (i2c_master_dev_handle_t)dev->dev_handle;
+
+    esp_err_t ret = i2c_master_receive(dev_handle, (uint8_t *)data, len, I2C_TIMEOUT_MS);
 
     if (ret != ESP_OK)
     {
@@ -266,27 +281,18 @@ esp_err_t i2c_dev_write(i2c_dev_t *dev, const void *data, size_t len)
         return ESP_ERR_INVALID_ARG;
     }
 
-    I2C_DEV_TAKE_MUTEX(dev);
-
-    // Create device handle
-    i2c_device_config_t dev_cfg = {
-        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = dev->addr,
-        .scl_speed_hz = dev->clk_speed,
-    };
-
-    i2c_master_dev_handle_t dev_handle;
-    esp_err_t ret = i2c_master_bus_add_device(i2c_bus_handle, &dev_cfg, &dev_handle);
-    if (ret != ESP_OK)
+    if (dev->dev_handle == NULL)
     {
-        ESP_LOGE(TAG, "Failed to add device: %s", esp_err_to_name(ret));
-        I2C_DEV_GIVE_MUTEX(dev);
-        return ret;
+        ESP_LOGE(TAG, "Device 0x%02x not initialized", dev->addr);
+        return ESP_ERR_INVALID_STATE;
     }
 
-    ret = i2c_master_transmit(dev_handle, (const uint8_t *)data, len, I2C_TIMEOUT_MS);
+    I2C_DEV_TAKE_MUTEX(dev);
 
-    i2c_master_bus_rm_device(dev_handle);
+    // Use existing device handle
+    i2c_master_dev_handle_t dev_handle = (i2c_master_dev_handle_t)dev->dev_handle;
+
+    esp_err_t ret = i2c_master_transmit(dev_handle, (const uint8_t *)data, len, I2C_TIMEOUT_MS);
 
     if (ret != ESP_OK)
     {
