@@ -13,7 +13,6 @@
 #include <stdbool.h>
 
 /* Private defines -----------------------------------------------------------*/
-#define FIRMWARE_VERSION "1.0" // Firmware version
 
 #define DEFAULT_INTERVAL 5       // Default publish interval in seconds
 #define MIN_INTERVAL 1           // Minimum interval
