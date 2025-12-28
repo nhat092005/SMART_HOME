@@ -6,4 +6,5 @@ idf_component_register(
     ds3231
     sht3x
     bh1750
+    sh1106
 )

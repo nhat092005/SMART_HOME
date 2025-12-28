@@ -11,6 +11,7 @@
 
 #include "esp_err.h"
 #include "i2cdev_config.h"
+#include "sh1106.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -36,6 +37,7 @@ typedef struct
     bool ds3231_ok; //!< True if DS3231 RTC is responding
     bool sht3x_ok;  //!< True if SHT3x sensor is responding
     bool bh1750_ok; //!< True if BH1750 sensor is responding
+    bool sh1106_ok; //!< True if SH1106 display is responding
 } sensor_status_t;
 
 /* Exported functions --------------------------------------------------------*/
@@ -90,6 +92,13 @@ esp_err_t sensor_manager_get_timestamp(uint32_t *timestamp);
  * @return ESP_OK on success, error code otherwise
  */
 esp_err_t sensor_manager_set_timestamp(uint32_t timestamp);
+
+/**
+ * @brief Get SH1106 display device descriptor
+ *
+ * @return Pointer to sh1106_t device, or NULL if not initialized
+ */
+sh1106_t *sensor_manager_get_display_device(void);
 
 /**
  * @brief Deinitialize sensor manager and free resources

@@ -7,9 +7,11 @@
 /* Includes ------------------------------------------------------------------*/
 
 #include "sensor_manager.h"
+#include "i2cdev.h"
 #include "ds3231.h"
 #include "sht3x.h"
 #include "bh1750.h"
+#include "sh1106.h"
 #include "esp_log.h"
 #include <string.h>
 
@@ -22,11 +24,13 @@ bool initialized = false;
 ds3231_t ds3231_dev;
 sht3x_t sht3x_dev;
 bh1750_t bh1750_dev;
+sh1106_t sh1106_dev;
 
 // Sensor readiness flags (exported for sensor_reader.c)
 bool ds3231_ready = false;
 bool sht3x_ready = false;
 bool bh1750_ready = false;
+bool sh1106_ready = false;
 
 /* Private variables ----------------------------------------------------------*/
 
@@ -74,19 +78,30 @@ esp_err_t sensor_manager_init(gpio_num_t sda, gpio_num_t scl)
     ret = ds3231_init_desc(&ds3231_dev, i2c_port, sda, scl);
     if (ret == ESP_OK)
     {
-        // Verify hardware by reading time
-        struct tm time;
-        ret = ds3231_get_time(&ds3231_dev, &time);
-        if (ret == ESP_OK)
-        {
-            ds3231_ready = true;
-            ESP_LOGI(TAG, "DS3231 RTC initialized");
-        }
-        else
+        // Add device to I2C bus
+        ret = i2c_dev_init(&ds3231_dev.i2c_dev);
+        if (ret != ESP_OK)
         {
             ds3231_free_desc(&ds3231_dev);
             ds3231_ready = false;
-            ESP_LOGW(TAG, "DS3231 hardware verification failed: %s", esp_err_to_name(ret));
+            ESP_LOGW(TAG, "DS3231 device add failed: %s", esp_err_to_name(ret));
+        }
+        else
+        {
+            // Verify hardware by reading time
+            struct tm time;
+            ret = ds3231_get_time(&ds3231_dev, &time);
+            if (ret == ESP_OK)
+            {
+                ds3231_ready = true;
+                ESP_LOGI(TAG, "DS3231 RTC initialized");
+            }
+            else
+            {
+                ds3231_free_desc(&ds3231_dev);
+                ds3231_ready = false;
+                ESP_LOGW(TAG, "DS3231 hardware verification failed: %s", esp_err_to_name(ret));
+            }
         }
     }
     else
@@ -99,17 +114,28 @@ esp_err_t sensor_manager_init(gpio_num_t sda, gpio_num_t scl)
     ret = sht3x_init_desc(&sht3x_dev, SHT3X_I2C_ADDR_GND, i2c_port, sda, scl);
     if (ret == ESP_OK)
     {
-        ret = sht3x_init(&sht3x_dev);
-        if (ret == ESP_OK)
-        {
-            sht3x_ready = true;
-            ESP_LOGI(TAG, "SHT3x sensor initialized");
-        }
-        else
+        // Add device to I2C bus
+        ret = i2c_dev_init(&sht3x_dev.i2c_dev);
+        if (ret != ESP_OK)
         {
             sht3x_free_desc(&sht3x_dev);
             sht3x_ready = false;
-            ESP_LOGW(TAG, "SHT3x hardware verification failed: %s", esp_err_to_name(ret));
+            ESP_LOGW(TAG, "SHT3x device add failed: %s", esp_err_to_name(ret));
+        }
+        else
+        {
+            ret = sht3x_init(&sht3x_dev);
+            if (ret == ESP_OK)
+            {
+                sht3x_ready = true;
+                ESP_LOGI(TAG, "SHT3x sensor initialized");
+            }
+            else
+            {
+                sht3x_free_desc(&sht3x_dev);
+                sht3x_ready = false;
+                ESP_LOGW(TAG, "SHT3x hardware verification failed: %s", esp_err_to_name(ret));
+            }
         }
     }
     else
@@ -122,24 +148,69 @@ esp_err_t sensor_manager_init(gpio_num_t sda, gpio_num_t scl)
     ret = bh1750_init_desc(&bh1750_dev, BH1750_ADDR_LO, i2c_port, sda, scl);
     if (ret == ESP_OK)
     {
-        // Verify hardware by setup sensor
-        ret = bh1750_setup(&bh1750_dev, BH1750_MODE_CONTINUOUS, BH1750_RES_HIGH);
-        if (ret == ESP_OK)
-        {
-            bh1750_ready = true;
-            ESP_LOGI(TAG, "BH1750 sensor initialized");
-        }
-        else
+        // Add device to I2C bus
+        ret = i2c_dev_init(&bh1750_dev.i2c_dev);
+        if (ret != ESP_OK)
         {
             bh1750_free_desc(&bh1750_dev);
             bh1750_ready = false;
-            ESP_LOGW(TAG, "BH1750 hardware verification failed: %s", esp_err_to_name(ret));
+            ESP_LOGW(TAG, "BH1750 device add failed: %s", esp_err_to_name(ret));
+        }
+        else
+        {
+            // Verify hardware by setup sensor
+            ret = bh1750_setup(&bh1750_dev, BH1750_MODE_CONTINUOUS, BH1750_RES_HIGH);
+            if (ret == ESP_OK)
+            {
+                bh1750_ready = true;
+                ESP_LOGI(TAG, "BH1750 sensor initialized");
+            }
+            else
+            {
+                bh1750_free_desc(&bh1750_dev);
+                bh1750_ready = false;
+                ESP_LOGW(TAG, "BH1750 hardware verification failed: %s", esp_err_to_name(ret));
+            }
         }
     }
     else
     {
         bh1750_ready = false;
         ESP_LOGW(TAG, "BH1750 initialization failed: %s", esp_err_to_name(ret));
+    }
+
+    // Initialize SH1106 OLED display
+    ret = sh1106_init_desc(&sh1106_dev, 0x3C, i2c_port, sda, scl);
+    if (ret == ESP_OK)
+    {
+        // Add device to I2C bus
+        ret = i2c_dev_init(&sh1106_dev.i2c_dev);
+        if (ret != ESP_OK)
+        {
+            sh1106_free_desc(&sh1106_dev);
+            sh1106_ready = false;
+            ESP_LOGW(TAG, "SH1106 device add failed: %s", esp_err_to_name(ret));
+        }
+        else
+        {
+            ret = sh1106_init(&sh1106_dev);
+            if (ret == ESP_OK)
+            {
+                sh1106_ready = true;
+                ESP_LOGI(TAG, "SH1106 display initialized");
+            }
+            else
+            {
+                sh1106_free_desc(&sh1106_dev);
+                sh1106_ready = false;
+                ESP_LOGW(TAG, "SH1106 hardware verification failed: %s", esp_err_to_name(ret));
+            }
+        }
+    }
+    else
+    {
+        sh1106_ready = false;
+        ESP_LOGW(TAG, "SH1106 initialization failed: %s", esp_err_to_name(ret));
     }
 
     // Check if at least one sensor is ready
@@ -151,8 +222,8 @@ esp_err_t sensor_manager_init(gpio_num_t sda, gpio_num_t scl)
 
     initialized = true;
 
-    ESP_LOGI(TAG, "Sensor Manager initialized (DS3231=%d, SHT3x=%d, BH1750=%d)",
-             ds3231_ready, sht3x_ready, bh1750_ready);
+    ESP_LOGI(TAG, "Sensor Manager initialized (DS3231=%d, SHT3x=%d, BH1750=%d, SH1106=%d)",
+             ds3231_ready, sht3x_ready, bh1750_ready, sh1106_ready);
 
     return ESP_OK;
 }
@@ -171,9 +242,10 @@ esp_err_t sensor_manager_get_status(sensor_status_t *status)
     status->ds3231_ok = ds3231_ready;
     status->sht3x_ok = sht3x_ready;
     status->bh1750_ok = bh1750_ready;
+    status->sh1106_ok = sh1106_ready;
 
-    ESP_LOGD(TAG, "Sensor status: DS3231=%d, SHT3x=%d, BH1750=%d",
-             ds3231_ready, sht3x_ready, bh1750_ready);
+    ESP_LOGD(TAG, "Sensor status: DS3231=%d, SHT3x=%d, BH1750=%d, SH1106=%d", 
+             ds3231_ready, sht3x_ready, bh1750_ready, sh1106_ready);
 
     return ESP_OK;
 }
@@ -267,4 +339,18 @@ esp_err_t sensor_manager_set_timestamp(uint32_t timestamp)
 
     ESP_LOGI(TAG, "Timestamp set successfully");
     return ESP_OK;
+}
+
+/**
+ * @brief Get SH1106 display device descriptor
+ */
+sh1106_t* sensor_manager_get_display_device(void)
+{
+    if (!sh1106_ready)
+    {
+        ESP_LOGW(TAG, "SH1106 display not ready");
+        return NULL;
+    }
+    
+    return &sh1106_dev;
 }
