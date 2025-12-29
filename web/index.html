@@ -60,29 +60,29 @@
           href="#"
           class="active"
           onclick="switchTab('dashboard')"
-          aria-label="Quản lý"
+          aria-label="Home"
         >
           <i class="fa-solid fa-house" aria-hidden="true"></i>
-          <span class="menu-text">Quản lý</span>
+          <span class="menu-text">Home</span>
         </a>
         <a href="#" onclick="switchTab('report')" aria-label="Dashboard">
           <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
           <span class="menu-text">Dashboard</span>
         </a>
-        <a href="#" onclick="switchTab('export')" aria-label="Dữ liệu">
+        <a href="#" onclick="switchTab('export')" aria-label="Data">
           <i class="fa-solid fa-table-list" aria-hidden="true"></i>
-          <span class="menu-text">Dữ liệu</span>
+          <span class="menu-text">Data</span>
         </a>
-        <a href="#" onclick="switchTab('setting')" aria-label="Cấu hình">
+        <a href="#" onclick="switchTab('setting')" aria-label="Settings">
           <i class="fa-solid fa-gear" aria-hidden="true"></i>
-          <span class="menu-text">Cấu hình</span>
+          <span class="menu-text">Settings</span>
         </a>
       </div>
     </nav>
 
     <main class="main-content">
       <header>
-        <h1>Quản lý</h1>
+        <h1>Home</h1>
         <div class="badges">
           <span id="mqtt-status" class="badge error">MQTT: Disconnected</span>
           <span id="db-status" class="badge warning"
@@ -98,8 +98,8 @@
             type="button"
             id="logout-btn"
             class="btn-logout"
-            title="Đăng xuất"
-            aria-label="Đăng xuất"
+            title="Log Out"
+            aria-label="Log Out"
           >
             <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
           </button>
@@ -110,7 +110,7 @@
       <div class="grid-container" id="device-grid"></div>
 
       <div id="report-view" class="report-view-container">
-        <h2 class="report-view-header">Phòng</h2>
+        <h2 class="report-view-header">Room</h2>
       </div>
 
       <div id="report-list" class="report-grid"></div>
@@ -137,7 +137,7 @@
                 <i class="fa-solid fa-temperature-half"></i>
               </div>
               <div class="stat-info">
-                <span>Nhiệt Độ</span>
+                <span>Temperature</span>
                 <h4 id="detail-temp">-- °C</h4>
               </div>
             </div>
@@ -148,7 +148,7 @@
             >
               <div class="stat-icon"><i class="fa-solid fa-droplet"></i></div>
               <div class="stat-info">
-                <span>Độ Ẩm</span>
+                <span>Humidity</span>
                 <h4 id="detail-humid">-- %</h4>
               </div>
             </div>
@@ -159,7 +159,7 @@
             >
               <div class="stat-icon"><i class="fa-solid fa-sun"></i></div>
               <div class="stat-info">
-                <span>Ánh Sáng</span>
+                <span>Light</span>
                 <h4 id="detail-light">-- Lux</h4>
               </div>
             </div>
@@ -174,7 +174,7 @@
               <h4>Quick Control</h4>
               <div class="control-item">
                 <div class="control-label">
-                  <i class="fa-solid fa-fan"></i> Quạt Gió
+                  <i class="fa-solid fa-fan"></i> Fan
                 </div>
                 <label class="switch">
                   <input
@@ -188,7 +188,7 @@
 
               <div class="control-item">
                 <div class="control-label">
-                  <i class="fa-solid fa-lightbulb"></i> Đèn Phòng
+                  <i class="fa-solid fa-lightbulb"></i> Lamp
                 </div>
                 <label class="switch">
                   <input
@@ -202,7 +202,7 @@
 
               <div class="control-item">
                 <div class="control-label">
-                  <i class="fa-solid fa-snowflake"></i> Máy Lạnh
+                  <i class="fa-solid fa-snowflake"></i> Air Conditioner
                 </div>
                 <label class="switch">
                   <input
@@ -220,26 +220,26 @@
 
       <div id="setting-view" class="settings-view-container">
         <div class="card settings-card">
-          <!-- Hiển thị Thứ, Ngày tháng năm và Đồng hồ -->
+          <!-- Display Day, Date and Clock -->
           <div class="clock-display">
             <div id="current-date" class="clock-date">
-              <!-- JavaScript sẽ cập nhật -->
+              <!-- JavaScript will update -->
             </div>
             <div id="current-time" class="clock-time">
-              <!-- JavaScript sẽ cập nhật -->
+              <!-- JavaScript will update -->
             </div>
           </div>
 
-          <!-- Bảng thiết bị với đầy đủ thông tin -->
+          <!-- Device table with full information -->
           <div class="device-table-container">
             <table class="data-table">
               <thead>
                 <tr class="table-center-header">
-                  <th class="col-stt">STT</th>
-                  <th>Tên Phòng</th>
+                  <th class="col-stt">No.</th>
+                  <th>Room Name</th>
                   <th>ID</th>
                   <th>IP</th>
-                  <th>Thời Gian</th>
+                  <th>Time</th>
                   <th>WiFi</th>
                   <th>Reboot</th>
                 </tr>
@@ -247,8 +247,8 @@
               <tbody id="device-info-table">
                 <tr>
                   <td colspan="7" class="table-loading">
-                    <i class="fa-solid fa-spinner fa-spin"></i> Đang tải thông
-                    tin thiết bị...
+                    <i class="fa-solid fa-spinner fa-spin"></i> Loading device
+                    information...
                   </td>
                 </tr>
               </tbody>
@@ -257,7 +257,7 @@
         </div>
       </div>
 
-      <!-- Modal hướng dẫn WiFi -->
+      <!-- Modal WiFi Guide -->
       <div id="wifi-guide-modal" class="wifi-modal-overlay">
         <div class="wifi-modal-wrapper">
           <div class="wifi-modal-content">
@@ -265,16 +265,15 @@
               >&times;</span
             >
             <h3 class="wifi-modal-title">
-              <i class="fa-solid fa-wifi"></i> Hướng Dẫn Cấu Hình WiFi
+              <i class="fa-solid fa-wifi"></i> WiFi Configuration Guide
             </h3>
             <div id="wifi-guide-content" class="wifi-modal-body">
-              <!-- Nội dung sẽ được thêm bằng JS -->
+              <!-- Content will be added by JS -->
             </div>
           </div>
         </div>
       </div>
-
-      <!-- Modal chỉnh thời gian thủ công (đặt ngoài tất cả các view) -->
+      <!-- Modal Manual Time Adjustment (placed outside all views) -->
       <div id="manual-time-modal" class="time-modal-overlay">
         <div class="time-modal-wrapper">
           <div class="time-modal-content">
@@ -282,12 +281,12 @@
               >&times;</span
             >
             <h3 class="time-modal-title">
-              <i class="fa-solid fa-calendar-days"></i> Chỉnh Thời Gian Thủ Công
+              <i class="fa-solid fa-calendar-days"></i> Manual Time Adjustment
             </h3>
 
             <div class="time-input-group">
               <label class="time-input-label">
-                <i class="fa-solid fa-calendar"></i> Chọn Ngày:
+                <i class="fa-solid fa-calendar"></i> Select Date:
               </label>
               <input
                 type="date"
@@ -298,7 +297,7 @@
 
             <div class="time-input-group">
               <label class="time-input-label">
-                <i class="fa-solid fa-clock"></i> Chọn Giờ:
+                <i class="fa-solid fa-clock"></i> Select Time:
               </label>
               <input
                 type="time"
@@ -308,9 +307,9 @@
             </div>
 
             <div class="time-preview-box">
-              <div class="time-preview-label">Thời gian đã chọn:</div>
+              <div class="time-preview-label">Selected Time:</div>
               <div id="manual-time-preview" class="time-preview-value">
-                Chưa chọn
+                Not selected
               </div>
             </div>
 
@@ -320,7 +319,7 @@
                 onclick="applyManualTime()"
                 class="btn-modal-apply"
               >
-                <i class="fa-solid fa-check"></i> Áp Dụng
+                <i class="fa-solid fa-check"></i> Apply
               </button>
               <button
                 type="button"
@@ -336,7 +335,7 @@
 
       <div id="export-view" class="export-view-container">
         <div class="card export-card">
-          <h2 class="export-header">Lịch sử dữ liệu</h2>
+          <h2 class="export-header">Data History</h2>
 
           <!-- Filter Toolbar -->
           <div class="filter-toolbar">
@@ -410,7 +409,7 @@
                 onclick="exportFilteredData()"
                 class="btn-export-filter"
               >
-                <i class="fa-solid fa-file-excel"></i> Export Filtered Data
+                <i class="fa-solid fa-file-excel"></i> Export Data
               </button>
             </div>
           </div>
@@ -419,18 +418,18 @@
             <table class="data-table">
               <thead>
                 <tr>
-                  <th class="col-stt">STT</th>
-                  <th>Phòng (Room)</th>
-                  <th>Thời Gian (Date & Time)</th>
-                  <th>Nhiệt độ (°C)</th>
-                  <th>Độ ẩm (%)</th>
-                  <th>Ánh sáng (Lux)</th>
+                  <th class="col-stt">No.</th>
+                  <th>Room</th>
+                  <th>Date & Time</th>
+                  <th>Temperature (°C)</th>
+                  <th>Humidity (%)</th>
+                  <th>Light (Lux)</th>
                 </tr>
               </thead>
               <tbody id="table-body">
                 <tr>
                   <td colspan="6" class="table-no-data">
-                    Chưa có dữ liệu. Hãy nhấn nút "Apply Filters".
+                    No data available. Please click the "Apply Filters" button.
                   </td>
                 </tr>
               </tbody>
@@ -443,20 +442,20 @@
         <footer class="main-footer">
           <div class="footer-content">
             <div class="footer-section">
-              <h4>Tên</h4>
+              <h4>Name</h4>
               <p>Lê Quang Minh Nhật</p>
               <p>Thái Hữu Lợi</p>
               <p>Trần Hữu Đạo</p>
             </div>
             <div class="footer-section">
               <h4>MSSV</h4>
-              <p>23139026</p>
+              <p>23139031</p>
               <p>23139027</p>
               <p>23139028</p>
             </div>
             <div class="footer-section">
               <h4>email</h4>
-              <p>lequangminhnhat@example.com</p>
+              <p>minhnhat092005@gmail.com</p>
               <p>thaihuuloi@example.com</p>
               <p>tranhuudao@example.com</p>
             </div>
@@ -467,49 +466,49 @@
         </footer>
       </div>
     </main>
-    <!-- thêm thiết bị mới -->
+    <!-- Add New Device -->
     <div id="add-modal" class="modal">
       <div class="modal-content">
         <span class="close">&times;</span>
-        <h3>Thêm Thiết Bị Mới</h3>
+        <h3>Add New Device</h3>
         <form id="add-form">
           <div class="form-group">
-            <label>Tên Phòng / Vị Trí</label>
+            <label>Room Name / Location</label>
             <input
               type="text"
               id="dev-name"
-              placeholder="Vd: Phòng Khách"
+              placeholder="E.g., Living Room"
               required
             />
           </div>
           <div class="form-group">
-            <label>Mã Chip (ESP32 ID)</label>
+            <label>Chip ID (ESP32 ID)</label>
             <input
               type="text"
               id="dev-id"
-              placeholder="Vd: esp32_01"
+              placeholder="E.g., esp32_01"
               required
             />
-            <small>Phải trùng với mã nạp trong code ESP32</small>
+            <small>Must match the code uploaded to the ESP32</small>
           </div>
           <div class="form-group">
-            <label>Chu kỳ đo (Giây)</label>
+            <label>Measurement Interval (Seconds)</label>
             <input type="number" id="dev-interval" value="30" min="5" />
           </div>
           <button type="submit" class="btn-primary btn-full-width">
-            Lưu Thiết Bị
+            Save Device
           </button>
         </form>
       </div>
     </div>
-    <!-- Sửa thiết bị -->
+    <!-- Edit Device -->
     <div id="edit-modal" class="modal">
       <div class="modal-content">
         <span class="closeBtn">&times;</span>
-        <h3>Cập Nhật Thiết Bị</h3>
+        <h3>Edit Device</h3>
         <form id="edit-form">
           <div class="form-group">
-            <label>Mã Chip (ID):</label>
+            <label>Chip ID:</label>
             <input
               type="text"
               id="edit-dev-id"
@@ -519,25 +518,25 @@
           </div>
 
           <div class="form-group">
-            <label>Tên hiển thị mới:</label>
+            <label>New Display Name:</label>
             <input type="text" id="edit-dev-name" required />
           </div>
 
           <div class="form-group">
-            <label>Chu kỳ đo (Giây):</label>
+            <label>Measurement Interval (Seconds):</label>
             <input type="number" id="edit-dev-interval" min="5" required />
           </div>
 
           <div class="modal-actions-row">
             <button type="submit" class="btn-primary btn-flex-fill">
-              Lưu Thay Đổi
+              Save Changes
             </button>
             <button
               type="button"
               id="btn-delete-device"
               class="btn-danger btn-flex-fill"
             >
-              <i class="fa-solid fa-trash"></i> Xóa Thiết Bị
+              <i class="fa-solid fa-trash"></i> Delete Device
             </button>
           </div>
         </form>
