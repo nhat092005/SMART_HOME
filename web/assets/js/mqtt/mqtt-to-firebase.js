@@ -24,7 +24,7 @@ export async function syncSensorDataToFirebase(deviceId, sensorData) {
 
     try {
         const timestamp = sensorData.timestamp || Date.now();
-        
+
         // 1. Update current device sensors in /devices/{deviceId}/sensors
         const deviceSensorsRef = ref(db, `devices/${deviceId}/sensors`);
         await update(deviceSensorsRef, {
@@ -33,7 +33,7 @@ export async function syncSensorDataToFirebase(deviceId, sensorData) {
             light: parseInt(sensorData.light || 0),
             lastUpdate: timestamp
         });
-        
+
         // 2. Store historical data in /history/{deviceId}/records
         const historyRef = ref(db, `history/${deviceId}/records`);
         const newRecordRef = push(historyRef);
@@ -43,7 +43,7 @@ export async function syncSensorDataToFirebase(deviceId, sensorData) {
             light: parseInt(sensorData.light || 0),
             timestamp: timestamp
         });
-        
+
         // 3. Update SmartHome/{deviceId}/data (mirror MQTT structure)
         const smartHomeDataRef = ref(db, `SmartHome/${deviceId}/data`);
         await set(smartHomeDataRef, {
@@ -52,7 +52,7 @@ export async function syncSensorDataToFirebase(deviceId, sensorData) {
             light: parseInt(sensorData.light || 0),
             timestamp: timestamp
         });
-        
+
         console.log(`[MQTT to Firebase] Sensor data synced for ${deviceId}`);
     } catch (error) {
         console.error('[MQTT to Firebase] Error syncing sensor data:', error);
@@ -77,17 +77,17 @@ export async function syncStateToFirebase(deviceId, stateData) {
 
     try {
         const timestamp = Date.now();
-        
+
         // 1. Update device states in /devices/{deviceId}/states
         const deviceStatesRef = ref(db, `devices/${deviceId}/states`);
         await update(deviceStatesRef, {
             power: stateData.mode === 1, // Convert mode to boolean
             fan: stateData.fan === 1,
-            lamp: stateData.light === 1, // MQTT gửi 'light', UI dùng 'lamp'
+            lamp: stateData.light === 1, // MQTT send 'light', UI use 'lamp'
             ac: stateData.ac === 1,
             lastUpdate: timestamp
         });
-        
+
         // 2. Update interval in /devices/{deviceId}/interval
         if (stateData.interval !== undefined) {
             const deviceRef = ref(db, `devices/${deviceId}`);
@@ -95,18 +95,18 @@ export async function syncStateToFirebase(deviceId, stateData) {
                 interval: parseInt(stateData.interval || 5)
             });
         }
-        
+
         // 3. Update SmartHome/{deviceId}/state (mirror MQTT structure)
         const smartHomeStateRef = ref(db, `SmartHome/${deviceId}/state`);
         await set(smartHomeStateRef, {
             mode: stateData.mode || 0,
             interval: parseInt(stateData.interval || 5),
             fan: stateData.fan || 0,
-            light: stateData.light || 0, // Giữ nguyên tên 'light' như MQTT
+            light: stateData.light || 0, // Keep the name 'light' as in MQTT
             ac: stateData.ac || 0,
             timestamp: timestamp
         });
-        
+
         console.log(`[MQTT to Firebase] State synced for ${deviceId}`);
     } catch (error) {
         console.error('[MQTT to Firebase] Error syncing state:', error);
@@ -131,19 +131,19 @@ export async function syncInfoToFirebase(deviceId, infoData) {
 
     try {
         const timestamp = Date.now();
-        
+
         // 1. Update device info in /devices/{deviceId}
         const deviceRef = ref(db, `devices/${deviceId}`);
         const updates = {
             lastUpdate: timestamp
         };
-        
+
         if (infoData.ssid) updates.wifi = infoData.ssid;
         if (infoData.ip) updates.ip = infoData.ip;
         if (infoData.firmware) updates.firmware = infoData.firmware;
-        
+
         await update(deviceRef, updates);
-        
+
         // 2. Update SmartHome/{deviceId}/info (mirror MQTT structure)
         const smartHomeInfoRef = ref(db, `SmartHome/${deviceId}/info`);
         await set(smartHomeInfoRef, {
@@ -154,7 +154,7 @@ export async function syncInfoToFirebase(deviceId, infoData) {
             uptime: infoData.uptime || 0,
             timestamp: timestamp
         });
-        
+
         console.log(`[MQTT to Firebase] Info synced for ${deviceId}`);
     } catch (error) {
         console.error('[MQTT to Firebase] Error syncing info:', error);
@@ -175,7 +175,7 @@ export async function initializeDeviceInFirebase(deviceId, deviceName) {
     try {
         const deviceRef = ref(db, `devices/${deviceId}`);
         const smartHomeRef = ref(db, `SmartHome/${deviceId}`);
-        
+
         // Create default structure if device doesn't exist
         await update(deviceRef, {
             id: deviceId,
@@ -183,7 +183,7 @@ export async function initializeDeviceInFirebase(deviceId, deviceName) {
             interval: 5,
             lastUpdate: Date.now()
         });
-        
+
         console.log(`[MQTT to Firebase] Device ${deviceId} initialized`);
     } catch (error) {
         console.error('[MQTT to Firebase] Error initializing device:', error);

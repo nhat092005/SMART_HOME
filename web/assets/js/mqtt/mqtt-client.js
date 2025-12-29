@@ -6,15 +6,15 @@
 
 // MQTT configuration constants
 export const MQTT_TOPICS = {
-    DATA: 'data',       // Sensor data topic
-    STATE: 'state',     // Device state topic
-    INFO: 'info',       // Device info topic
-    COMMAND: 'command'  // Command topic
+    DATA: 'data',       //!< Sensor data topic
+    STATE: 'state',     //!< Device state topic
+    INFO: 'info',       //!< Device info topic
+    COMMAND: 'command'  //!< Command topic
 };
 
 const RETRY_CONFIG = {
-    MQTT_RETRY_DELAY: 5000, // 5 seconds between reconnection attempts
-    MAX_RETRY_COUNT: 10     // Maximum reconnection attempts
+    MQTT_RETRY_DELAY: 5000, //!< 5 seconds between reconnection attempts
+    MAX_RETRY_COUNT: 10     //!< Maximum reconnection attempts
 };
 
 // MQTT client state
@@ -28,7 +28,7 @@ let commandCounter = 0;
  */
 function loadMQTTConfig() {
     const savedConfig = localStorage.getItem('mqtt_config');
-    
+
     if (savedConfig) {
         try {
             const config = JSON.parse(savedConfig);
@@ -46,7 +46,7 @@ function loadMQTTConfig() {
             console.error('[MQTT] Error loading config:', error.message);
         }
     }
-    
+
     // Default configuration - HiveMQ Cloud
     return {
         host: "6ceea111b6144c71a57b21faa3553fc6.s1.eu.hivemq.cloud",
@@ -77,24 +77,24 @@ function generateClientId() {
  */
 export function initializeMQTTClient(onConnect, onMessage, onConnectionLost) {
     const config = loadMQTTConfig();
-    
+
     mqttClient = new Paho.MQTT.Client(
         config.host,
         Number(config.port),
         config.path,
         config.clientId
     );
-    
+
     // Setup callbacks
     mqttClient.onConnectionLost = (response) => {
         console.error('[MQTT] Connection lost:', response.errorMessage);
         onConnectionLost(response);
     };
-    
+
     mqttClient.onMessageArrived = (message) => {
         onMessage(message);
     };
-    
+
     // Connection options
     const connectOptions = {
         useSSL: config.useSSL,
@@ -111,17 +111,17 @@ export function initializeMQTTClient(onConnect, onMessage, onConnectionLost) {
             handleConnectionFailure();
         }
     };
-    
+
     // Add credentials if provided
     if (config.username) {
         connectOptions.userName = config.username;
         connectOptions.password = config.password;
     }
-    
+
     // Connect
     console.log('[MQTT] Connecting to', config.host);
     mqttClient.connect(connectOptions);
-    
+
     return mqttClient;
 }
 
@@ -130,14 +130,14 @@ export function initializeMQTTClient(onConnect, onMessage, onConnectionLost) {
  */
 function handleConnectionFailure() {
     mqttRetryCount++;
-    
+
     if (mqttRetryCount >= RETRY_CONFIG.MAX_RETRY_COUNT) {
         console.error('[MQTT] Max retry count reached. Stopping reconnection attempts.');
         return;
     }
-    
+
     console.log(`[MQTT] Retry attempt ${mqttRetryCount}/${RETRY_CONFIG.MAX_RETRY_COUNT} in ${RETRY_CONFIG.MQTT_RETRY_DELAY / 1000}s...`);
-    
+
     setTimeout(() => {
         if (mqttClient) {
             try {
@@ -158,13 +158,13 @@ export function subscribeToDevice(deviceId) {
         console.error('[MQTT] Client not connected');
         return false;
     }
-    
+
     const topics = [
         `SmartHome/${deviceId}/${MQTT_TOPICS.DATA}`,
         `SmartHome/${deviceId}/${MQTT_TOPICS.STATE}`,
         `SmartHome/${deviceId}/${MQTT_TOPICS.INFO}`
     ];
-    
+
     topics.forEach(topic => {
         try {
             mqttClient.subscribe(topic);
@@ -173,7 +173,7 @@ export function subscribeToDevice(deviceId) {
             console.error('[MQTT] Subscribe error:', error);
         }
     });
-    
+
     return true;
 }
 
@@ -189,16 +189,16 @@ export function sendMQTTCommand(deviceId, command, params) {
         console.error('[MQTT] Client not connected');
         return false;
     }
-    
+
     const topic = `SmartHome/${deviceId}/${MQTT_TOPICS.COMMAND}`;
     commandCounter++;
-    
+
     const payload = {
         id: `cmd_${commandCounter.toString().padStart(3, '0')}`,
         command: command,
         params: params
     };
-    
+
     try {
         const message = new Paho.MQTT.Message(JSON.stringify(payload));
         message.destinationName = topic;

@@ -7,20 +7,17 @@
 import { MQTT_TOPICS } from './mqtt-client.js';
 import { updateDeviceCard } from '../devices/device-card.js';
 import { updateStatusBadge } from '../ui/ui-helpers.js';
-import { 
-    syncSensorDataToFirebase, 
-    syncStateToFirebase, 
-    syncInfoToFirebase 
+import {
+    syncSensorDataToFirebase,
+    syncStateToFirebase,
+    syncInfoToFirebase
 } from './mqtt-to-firebase.js';
 
-// ============================================
-// MQTT State Cache - Lưu trữ state realtime từ MQTT broker
-// ============================================
+/* Cache for MQTT states */
 const mqttStateCache = {};
 
 /**
  * Get cached MQTT state for a device
- * Đây là state được nhận trực tiếp từ MQTT broker (SmartHome/{deviceId}/state)
  * @param {string} deviceId - Device identifier
  * @returns {Object|null} Cached state object { fan, light, ac, mode, interval, timestamp }
  */
@@ -44,17 +41,17 @@ export function handleMQTTMessage(message) {
     try {
         const topic = message.destinationName;
         const payload = JSON.parse(message.payloadString);
-        
+
         // Parse topic: SmartHome/{deviceId}/{type}
         const topicParts = topic.split('/');
         if (topicParts.length < 3) {
             console.warn('[MQTT] Invalid topic format:', topic);
             return;
         }
-        
+
         const deviceId = topicParts[1];
         const topicType = topicParts[2];
-        
+
         // Route to appropriate handler
         switch (topicType) {
             case MQTT_TOPICS.DATA:
@@ -81,15 +78,15 @@ export function handleMQTTMessage(message) {
  */
 function handleDataMessage(deviceId, data) {
     console.log(`[MQTT] Data from ${deviceId}:`, data);
-    
-    // Update device card UI với dữ liệu thực từ ESP32
+
+    // Update device card UI with real data from ESP32
     updateDeviceCard(deviceId, {
         temperature: parseFloat(data.temperature || 0).toFixed(2),
         humidity: parseFloat(data.humidity || 0).toFixed(2),
         light: parseInt(data.light || 0),
         timestamp: data.timestamp || Date.now()
     });
-    
+
     // Sync to Firebase
     syncSensorDataToFirebase(deviceId, {
         temperature: parseFloat(data.temperature || 0),
@@ -106,32 +103,30 @@ function handleDataMessage(deviceId, data) {
  */
 function handleStateMessage(deviceId, state) {
     console.log(`[MQTT] State from ${deviceId}:`, state);
-    
-    // ============================================
-    // LƯU STATE VÀO CACHE - Đây là giá trị realtime từ phần cứng
-    // ============================================
+
+    /* Cache the state */
     mqttStateCache[deviceId] = {
-        fan: state.fan,           // 0 = tắt, 1 = bật
-        light: state.light,       // 0 = tắt, 1 = bật  
-        ac: state.ac,             // 0 = tắt, 1 = bật
-        mode: state.mode,         // 0 = tắt, 1 = bật (power)
+        fan: state.fan,           // 0 = OFF, 1 = ON
+        light: state.light,       // 0 = OFF, 1 = ON  
+        ac: state.ac,             // 0 = OFF, 1 = ON
+        mode: state.mode,         // 0 = OFF, 1 = ON (power)
         interval: state.interval,
         timestamp: state.timestamp || Date.now(),
-        receivedAt: Date.now()    // Thời điểm nhận được từ MQTT
+        receivedAt: Date.now()    // Time received from MQTT
     };
     console.log(`[MQTT] Cached state for ${deviceId}:`, mqttStateCache[deviceId]);
-    
-    // mode: 0 = tắt, 1 = bật
+
+    // mode: 0 = OFF, 1 = ON
     const isPowerOn = state.mode === 1;
-    
-    // Update nút bật/tắt trong device card
+
+    // Update power button in device card
     updateDevicePowerButton(deviceId, isPowerOn);
-    
-    // Update interval nếu có
+
+    // Update interval if available
     if (state.interval !== undefined) {
         updateDeviceInterval(deviceId, state.interval);
     }
-    
+
     // Update Quick Control toggles if modal is open for this device
     if (state.fan !== undefined && window.updateToggleUI) {
         window.updateToggleUI(deviceId, 'fan', state.fan);
@@ -145,7 +140,7 @@ function handleStateMessage(deviceId, state) {
         window.updateToggleUI(deviceId, 'ac', state.ac);
         window.clearPendingToggle?.(deviceId, 'ac');
     }
-    
+
     // Sync to Firebase
     syncStateToFirebase(deviceId, state);
 }
@@ -157,12 +152,12 @@ function handleStateMessage(deviceId, state) {
  */
 function handleInfoMessage(deviceId, info) {
     console.log(`[MQTT] Info from ${deviceId}:`, info);
-    
+
     // Cập nhật tên WiFi (ssid)
     if (info.ssid) {
         updateDeviceWiFiName(deviceId, info.ssid);
     }
-    
+
     // Update device info if needed
     if (info.ip || info.firmware || info.uptime) {
         updateDeviceCard(deviceId, {
@@ -171,7 +166,7 @@ function handleInfoMessage(deviceId, info) {
             uptime: info.uptime
         });
     }
-    
+
     // Sync to Firebase
     syncInfoToFirebase(deviceId, info);
 }
@@ -184,7 +179,7 @@ function handleInfoMessage(deviceId, info) {
 function updateDeviceWiFiName(deviceId, ssid) {
     const card = document.getElementById(`device-${deviceId}`);
     if (!card) return;
-    
+
     const wifiEl = card.querySelector('.fa-wifi')?.parentElement;
     if (wifiEl) {
         wifiEl.innerHTML = `<i class="fa-solid fa-wifi"></i> ${escapeHtml(ssid)}`;
@@ -214,20 +209,20 @@ function escapeHtml(unsafe) {
 function updateDevicePowerButton(deviceId, isPowerOn) {
     const card = document.getElementById(`device-${deviceId}`);
     if (!card) return;
-    
+
     const powerBtn = card.querySelector('button[onclick*="toggleDevicePower"]');
     if (!powerBtn) return;
-    
+
     // Cập nhật class và text
     if (isPowerOn) {
         powerBtn.classList.remove('btn-danger');
         powerBtn.classList.add('btn-success');
-        powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Tắt'; // Đang BẬT -> hiện nút TẮT (xanh)
+        powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> OFF'; // ON -> show OFF button (green)
         powerBtn.setAttribute('onclick', `window.toggleDevicePower('${deviceId}', false)`);
     } else {
         powerBtn.classList.remove('btn-success');
         powerBtn.classList.add('btn-danger');
-        powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Bật'; // Đang TẮT -> hiện nút BẬT (đỏ)
+        powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> ON'; // OFF -> show ON button (red)
         powerBtn.setAttribute('onclick', `window.toggleDevicePower('${deviceId}', true)`);
     }
 }
@@ -240,10 +235,10 @@ function updateDevicePowerButton(deviceId, isPowerOn) {
 function updateDeviceInterval(deviceId, interval) {
     const card = document.getElementById(`device-${deviceId}`);
     if (!card) return;
-    
+
     const intervalEl = card.querySelector(`#${deviceId}-interval`);
     if (!intervalEl) return;
-    
+
     // Format interval: 5s, 5m, 1h30m
     let intervalText;
     if (interval < 60) {
@@ -257,7 +252,7 @@ function updateDeviceInterval(deviceId, interval) {
         const minutes = Math.floor((interval % 3600) / 60);
         intervalText = minutes > 0 ? `${hours}h${minutes}m` : `${hours}h`;
     }
-    
+
     intervalEl.textContent = intervalText;
 }
 
@@ -268,7 +263,7 @@ function updateDeviceInterval(deviceId, interval) {
 export function handleMQTTConnect(onDeviceList) {
     console.log('[MQTT] Connection established');
     updateStatusBadge('mqtt-status', 'success', 'MQTT: Connected');
-    
+
     // Subscribe to all devices
     const devices = onDeviceList();
     console.log(`[MQTT] Subscribing to ${devices.length} devices`);
