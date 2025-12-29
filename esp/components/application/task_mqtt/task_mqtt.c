@@ -62,7 +62,7 @@ static const char *TAG = "TASK_MQTT";
 
 static system_state_t device_state = {
     .mode = 0,
-    .interval_sec = INTERVAL_TIME_MS,
+    .interval_sec = INTERVAL_TIME_MS / 1000,
     .fan = 0,
     .light = 0,
     .ac = 0};
