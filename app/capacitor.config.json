@@ -1,0 +1,15 @@
+{
+  "appId": "com.smarthome.app",
+  "appName": "SMART HOME",
+  "webDir": "www",
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": true,
+      "style": "DARK",
+      "backgroundColor": "#1e293b"
+    }
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
