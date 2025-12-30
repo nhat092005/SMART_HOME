@@ -1,0 +1,220 @@
+/**
+  * Settings View Styles
+  */
+
+/* Settings View Container */
+.settings-view-container {
+  display: none;
+}
+
+.settings-card {
+  background: white;
+  padding: 20px;
+  border-radius: var(--radius-lg);
+}
+
+/* Clock Display */
+.clock-display {
+  text-align: center;
+  padding: 20px;
+  background: white;
+  border: 2px solid #1e293b;
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+}
+
+.clock-date {
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 5px;
+}
+
+.clock-time {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  letter-spacing: 2px;
+}
+
+/* Device Info Table Container */
+.device-table-container {
+  overflow-x: auto;
+  margin-bottom: 15px;
+}
+
+/* Settings Table - Compact for Mobile */
+.settings-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.settings-table thead {
+  background: var(--bg-secondary);
+}
+
+.settings-table th {
+  padding: 10px 8px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-medium);
+  white-space: nowrap;
+}
+
+.settings-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
+
+.settings-table .col-stt {
+  width: 35px;
+  text-align: center;
+}
+
+.table-cell-center {
+  text-align: center;
+}
+
+/* Button styles for settings table */
+.btn-table {
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all var(--transition-base);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-table i {
+  font-size: 0.8rem;
+}
+
+.btn-table-success {
+  background: #10b981;
+  color: white;
+}
+
+.btn-table-success:active {
+  background: #059669;
+}
+
+.btn-table-primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-table-primary:active {
+  background: #1d4ed8;
+}
+
+.btn-table-danger {
+  background: var(--danger-color);
+  color: white;
+}
+
+.btn-table-danger:active {
+  background: #dc2626;
+}
+
+/* ========================================
+   ACCOUNT SECTION IN SETTINGS
+   ======================================== */
+.account-section {
+  margin-top: 20px;
+  padding: 15px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.account-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.account-header i {
+  font-size: 1.2rem;
+  color: var(--primary-color);
+}
+
+.account-info {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.account-email {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.account-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.account-email #user-email-display {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.connection-status {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.connection-status .badge {
+  font-size: 0.7rem;
+  padding: 4px 8px;
+}
+
+/* Logout Button - Full Width */
+.btn-logout-full {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background-color: var(--danger-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.btn-logout-full:hover {
+  background-color: var(--danger-hover);
+}
+
+.btn-logout-full:active {
+  transform: scale(0.98);
+}
+
+.btn-logout-full i {
+  font-size: 1rem;
+}

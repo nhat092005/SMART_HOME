@@ -1,0 +1,71 @@
+/**
+  * Bottom Navigation Layout Styles
+  * Mobile-first bottom navigation bar - Icon only
+  */
+
+/* Bottom Navigation Container */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  background-color: var(--sidebar-bg);
+  color: white;
+  z-index: var(--z-dropdown);
+  display: flex;
+  flex-direction: row;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  height: 50px;
+  transition: all var(--transition-base);
+}
+
+/* Navigation Menu */
+.bottom-nav .nav-menu {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  width: 100%;
+  gap: 0;
+  padding: 0;
+}
+
+/* Navigation Items - Icon Only */
+.bottom-nav .nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 50px;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all var(--transition-base);
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* Navigation Item Hover & Active State */
+.bottom-nav .nav-item:hover,
+.bottom-nav .nav-item.active {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
+}
+
+/* Icon Styling */
+.bottom-nav .nav-item i {
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Safe area insets for notched devices */
+@supports (padding: max(0px)) {
+  .bottom-nav {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+    height: calc(50px + max(0px, env(safe-area-inset-bottom)));
+  }
+}
