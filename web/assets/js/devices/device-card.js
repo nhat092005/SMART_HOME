@@ -5,6 +5,7 @@
  */
 
 import { sendMQTTCommand } from '../mqtt/mqtt-client.js';
+import { updateSensorDisplay } from '../charts/chart-manager.js';
 
 // Store device data for updates
 let devicesData = {};
@@ -193,7 +194,7 @@ export function updateDeviceCard(deviceId, updates) {
         devicesData[deviceId].lastUpdate = Date.now();
     }
 
-    // Update UI
+    // Update device card UI
     const tempEl = document.getElementById(`${deviceId}-temp`);
     const humidEl = document.getElementById(`${deviceId}-humid`);
     const lightEl = document.getElementById(`${deviceId}-light`);
@@ -207,6 +208,9 @@ export function updateDeviceCard(deviceId, updates) {
     if (lightEl && updates.light !== undefined) {
         lightEl.textContent = `${updates.light} Lux`;
     }
+
+    // Update popup sensor display (if popup is open for this device)
+    updateSensorDisplay(deviceId, updates);
 }
 
 /**
