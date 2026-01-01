@@ -401,6 +401,17 @@ void task_mqtt_on_get_status(const char *cmd_id)
 }
 
 /**
+ * @brief Handle ping command
+ */
+void task_mqtt_on_ping(const char *cmd_id)
+{
+    ESP_LOGI(TAG, "[%s] ping received", cmd_id);
+
+    // Just respond with success - simple connectivity check
+    mqtt_manager_publish_response(cmd_id, "success");
+}
+
+/**
  * @brief Handle reboot command
  */
 void task_mqtt_on_reboot(const char *cmd_id)
@@ -447,6 +458,7 @@ esp_err_t task_mqtt_init(void)
     mqtt_callback_register_on_set_interval(task_mqtt_on_set_interval);
     mqtt_callback_register_on_set_timestamp(task_mqtt_on_set_timestamp);
     mqtt_callback_register_on_get_status(task_mqtt_on_get_status);
+    mqtt_callback_register_on_ping(task_mqtt_on_ping);
     mqtt_callback_register_on_reboot(task_mqtt_on_reboot);
     mqtt_callback_register_on_factory_reset(task_mqtt_on_factory_reset);
 

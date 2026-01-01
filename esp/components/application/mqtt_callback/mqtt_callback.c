@@ -30,6 +30,7 @@ static mqtt_cmd_set_mode_cb_t on_set_mode_cb = NULL;
 static mqtt_cmd_set_interval_cb_t on_set_interval_cb = NULL;
 static mqtt_cmd_set_timestamp_cb_t on_set_timestamp_cb = NULL;
 static mqtt_cmd_get_status_cb_t on_get_status_cb = NULL;
+static mqtt_cmd_ping_cb_t on_ping_cb = NULL;
 static mqtt_cmd_reboot_cb_t on_reboot_cb = NULL;
 static mqtt_cmd_factory_reset_cb_t on_factory_reset_cb = NULL;
 
@@ -161,6 +162,15 @@ void mqtt_callback_register_on_get_status(mqtt_cmd_get_status_cb_t callback)
 {
     on_get_status_cb = callback;
     ESP_LOGI(TAG, "Registered: on_get_status");
+}
+
+/**
+ * @brief Callback registration API
+ */
+void mqtt_callback_register_on_ping(mqtt_cmd_ping_cb_t callback)
+{
+    on_ping_cb = callback;
+    ESP_LOGI(TAG, "Registered: on_ping");
 }
 
 /**
@@ -334,6 +344,21 @@ void mqtt_callback_invoke_get_status(const char *cmd_id)
 /**
  * @brief Callback invocation APIs
  */
+void mqtt_callback_invoke_ping(const char *cmd_id)
+{
+    if (on_ping_cb)
+    {
+        on_ping_cb(cmd_id);
+    }
+    else
+    {
+        ESP_LOGW(TAG, "[%s] No callback for: ping", cmd_id);
+    }
+}
+
+/**
+ * @brief Callback invocation APIs
+ */
 void mqtt_callback_invoke_reboot(const char *cmd_id)
 {
     if (on_reboot_cb)
@@ -431,6 +456,11 @@ static void mqtt_callback_internal_command_handler(const char *cmd_id, const cha
     else if (strcmp(command, "get_status") == 0)
     {
         mqtt_callback_invoke_get_status(cmd_id);
+    }
+    /* Command: ping */
+    else if (strcmp(command, "ping") == 0)
+    {
+        mqtt_callback_invoke_ping(cmd_id);
     }
     /* Command: reboot */
     else if (strcmp(command, "reboot") == 0)
