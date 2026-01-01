@@ -234,21 +234,43 @@ async function handleEditDevice(e) {
     const name = document.getElementById('edit-dev-name').value.trim();
     const interval = parseInt(document.getElementById('edit-dev-interval').value);
 
+    // Get save button to show loading state
+    const saveBtn = document.querySelector('#edit-form button[type="submit"]');
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+    }
+
     try {
-        // Update Firebase
+        // Update Firebase first
         await updateDevice(deviceId, { name, interval });
 
-        // Send MQTT command to update interval on ESP32
-        const mqttSuccess = sendMQTTCommand(deviceId, 'set_interval', { interval: interval });
-
-        if (mqttSuccess) {
-            alert(`Updated device!\n\nSent set_interval command (${interval}s) to ESP32.`);
-        } else {
-            alert(`Updated device in Firebase!\n\nUnable to send MQTT command (check connection).`);
-        }
-
-        hideModal('edit-modal');
+        // Send MQTT command with response callback
+        sendMQTTCommand(deviceId, 'set_interval', { interval: interval }, {
+            onSuccess: () => {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = 'Save Changes';
+                }
+                alert(`Updated device!\n\nInterval changed to ${interval}s.`);
+                hideModal('edit-modal');
+            },
+            onError: (error) => {
+                if (saveBtn) {
+                    saveBtn.disabled = false;
+                    saveBtn.innerHTML = 'Save Changes';
+                }
+                const errorMsg = error === 'timeout' ? 'Device not responding' : 'Device error';
+                alert(`Firebase updated, but ${errorMsg}.\n\nDevice interval may not be synced.`);
+                hideModal('edit-modal');
+            },
+            timeout: 5000
+        });
     } catch (error) {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = 'Save Changes';
+        }
         alert('Error: ' + error.message);
     }
 }
@@ -295,20 +317,76 @@ function exposeGlobalFunctions() {
 
     // Device power control
     window.toggleDevicePower = async (deviceId, newPowerState) => {
-        try {
-            // Send MQTT command - button will be updated automatically when ESP32 responds
-            const success = sendMQTTCommand(deviceId, 'set_mode', { mode: newPowerState ? 1 : 0 });
+        // Get button element to update UI
+        const card = document.getElementById(`device-${deviceId}`);
+        const powerBtn = card?.querySelector('button[onclick*="toggleDevicePower"]');
+        
+        if (powerBtn) {
+            // Disable button and show loading
+            powerBtn.disabled = true;
+            powerBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        }
 
-            if (success) {
-                console.log(`[App] Sent power command to ${deviceId}: ${newPowerState ? 'ON' : 'OFF'}`);
-                // REMOVED: Button update logic - mqtt-handlers.js will handle it when receiving state response
-            } else {
-                console.error('[App] Failed to send MQTT command');
-                alert('Unable to send control command. Check MQTT connection.');
+        // Send MQTT command with response callback
+        const result = sendMQTTCommand(deviceId, 'set_mode', { mode: newPowerState ? 1 : 0 }, {
+            onSuccess: () => {
+                console.log(`[App] Power command successful for ${deviceId}`);
+                // Update UI on success
+                if (powerBtn) {
+                    powerBtn.disabled = false;
+                    if (newPowerState) {
+                        powerBtn.classList.remove('btn-danger');
+                        powerBtn.classList.add('btn-success');
+                        powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> ON';
+                        powerBtn.setAttribute('onclick', `window.toggleDevicePower('${deviceId}', false)`);
+                    } else {
+                        powerBtn.classList.remove('btn-success');
+                        powerBtn.classList.add('btn-danger');
+                        powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> OFF';
+                        powerBtn.setAttribute('onclick', `window.toggleDevicePower('${deviceId}', true)`);
+                    }
+                }
+            },
+            onError: (error) => {
+                console.error(`[App] Power command failed for ${deviceId}:`, error);
+                // Restore button state
+                if (powerBtn) {
+                    powerBtn.disabled = false;
+                    // Restore to previous state (opposite of what we tried to set)
+                    if (!newPowerState) {
+                        powerBtn.classList.remove('btn-danger');
+                        powerBtn.classList.add('btn-success');
+                        powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> ON';
+                        powerBtn.setAttribute('onclick', `window.toggleDevicePower('${deviceId}', false)`);
+                    } else {
+                        powerBtn.classList.remove('btn-success');
+                        powerBtn.classList.add('btn-danger');
+                        powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> OFF';
+                        powerBtn.setAttribute('onclick', `window.toggleDevicePower('${deviceId}', true)`);
+                    }
+                }
+                const errorMsg = error === 'timeout' ? 'Device not responding' : 'Device error';
+                alert(`${errorMsg}: Unable to ${newPowerState ? 'turn ON' : 'turn OFF'} device.`);
+            },
+            timeout: 5000
+        });
+
+        if (!result) {
+            // Command failed to send
+            if (powerBtn) {
+                powerBtn.disabled = false;
+                // Restore original state
+                if (!newPowerState) {
+                    powerBtn.classList.remove('btn-danger');
+                    powerBtn.classList.add('btn-success');
+                    powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> ON';
+                } else {
+                    powerBtn.classList.remove('btn-success');
+                    powerBtn.classList.add('btn-danger');
+                    powerBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> OFF';
+                }
             }
-        } catch (error) {
-            console.error('[App] Toggle device power error:', error);
-            alert('Device control error: ' + error.message);
+            alert('Unable to send control command. Check MQTT connection.');
         }
     };
 
@@ -423,32 +501,6 @@ function exposeGlobalFunctions() {
         switchChartType(type);
     };
 
-    // Track pending toggle commands for timeout checking
-    const pendingToggles = new Map();
-
-    // Expose function to clear pending toggles from MQTT handlers
-    window.clearPendingToggle = (deviceId, feature) => {
-        const key = `${deviceId}_${feature}`;
-        const pending = pendingToggles.get(key);
-        if (pending) {
-            clearTimeout(pending.timeoutId);
-            pendingToggles.delete(key);
-            console.log(`[App] Cleared pending toggle for ${feature}`);
-        }
-    };
-
-    // Expose function to update toggle UI from MQTT state
-    window.updateToggleUI = (deviceId, feature, state) => {
-        if (deviceId !== window.currentDetailDeviceId) return;
-
-        const toggleId = `toggle-${feature}`;
-        const toggleEl = document.getElementById(toggleId);
-        if (toggleEl) {
-            toggleEl.checked = state === 1 || state === true;
-            console.log(`[App] Updated ${feature} toggle to ${state}`);
-        }
-    };
-
     window.toggleFeature = (feature) => {
         const deviceId = window.currentDetailDeviceId;
         if (!deviceId) {
@@ -465,43 +517,40 @@ function exposeGlobalFunctions() {
         if (!toggleEl) return;
 
         const newState = toggleEl.checked ? 1 : 0;
+        const previousState = !toggleEl.checked;
+
+        // Immediately revert toggle - will be set correctly on success
+        toggleEl.checked = previousState;
+        toggleEl.disabled = true;
 
         console.log(`[App] Toggle ${deviceName}: ${newState ? 'ON' : 'OFF'}`);
 
-        // Send MQTT command
-        const success = sendMQTTCommand(deviceId, 'set_device', {
+        // Send MQTT command with response callback
+        const result = sendMQTTCommand(deviceId, 'set_device', {
             device: deviceName,
             state: newState
+        }, {
+            onSuccess: () => {
+                console.log(`[App] Toggle ${deviceName} successful`);
+                toggleEl.disabled = false;
+                toggleEl.checked = newState === 1;
+            },
+            onError: (error) => {
+                console.error(`[App] Toggle ${deviceName} failed:`, error);
+                toggleEl.disabled = false;
+                toggleEl.checked = previousState;
+                const featureNames = { fan: 'Fan', lamp: 'Lamp', ac: 'Air Conditioner' };
+                const errorMsg = error === 'timeout' ? 'Device not responding' : 'Device error';
+                alert(`${errorMsg}: Unable to control ${featureNames[feature]}.`);
+            },
+            timeout: 5000
         });
 
-        if (!success) {
+        if (!result) {
+            toggleEl.disabled = false;
+            toggleEl.checked = previousState;
             alert('Unable to send toggle command. Check MQTT connection.');
-            // Revert toggle
-            toggleEl.checked = !toggleEl.checked;
-            return;
         }
-
-        // Start timeout timer (3 seconds)
-        const timeoutId = setTimeout(() => {
-            // If still in pending map after 3s, device didn't respond
-            if (pendingToggles.has(`${deviceId}_${feature}`)) {
-                console.warn(`[App] Device ${deviceId} no response for ${feature}`);
-                alert(`Device did not respond to ${feature === 'fan' ? 'Fan' : feature === 'lamp' ? 'Light' : 'AC'} command`);
-
-                // Revert toggle to previous state
-                toggleEl.checked = !toggleEl.checked;
-
-                // Remove from pending
-                pendingToggles.delete(`${deviceId}_${feature}`);
-            }
-        }, 3000);
-
-        // Store pending toggle
-        pendingToggles.set(`${deviceId}_${feature}`, {
-            timeoutId,
-            expectedState: newState,
-            toggleEl
-        });
     };
 
     // Export operations

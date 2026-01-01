@@ -4,7 +4,7 @@
  * Processes incoming MQTT messages and updates UI accordingly
  */
 
-import { MQTT_TOPICS } from './mqtt-client.js';
+import { MQTT_TOPICS, handleCommandResponse } from './mqtt-client.js';
 import { updateDeviceCard } from '../devices/device-card.js';
 import { updateStatusBadge } from '../ui/ui-helpers.js';
 import {
@@ -42,6 +42,8 @@ export function handleMQTTMessage(message) {
         const topic = message.destinationName;
         const payload = JSON.parse(message.payloadString);
 
+        console.log('[MQTT] Received:', { topic, payload });
+
         // Parse topic: SmartHome/{deviceId}/{type}
         const topicParts = topic.split('/');
         if (topicParts.length < 3) {
@@ -51,6 +53,8 @@ export function handleMQTTMessage(message) {
 
         const deviceId = topicParts[1];
         const topicType = topicParts[2];
+        
+        console.log('[MQTT] Parsed:', { deviceId, topicType, expected_RESPONSE: MQTT_TOPICS.RESPONSE });
 
         // Route to appropriate handler
         switch (topicType) {
@@ -62,6 +66,9 @@ export function handleMQTTMessage(message) {
                 break;
             case MQTT_TOPICS.INFO:
                 handleInfoMessage(deviceId, payload);
+                break;
+            case MQTT_TOPICS.RESPONSE:
+                handleResponseMessage(deviceId, payload);
                 break;
             default:
                 console.warn('[MQTT] Unknown topic type:', topicType);
@@ -127,22 +134,31 @@ function handleStateMessage(deviceId, state) {
         updateDeviceInterval(deviceId, state.interval);
     }
 
-    // Update Quick Control toggles if modal is open for this device
-    if (state.fan !== undefined && window.updateToggleUI) {
-        window.updateToggleUI(deviceId, 'fan', state.fan);
-        window.clearPendingToggle?.(deviceId, 'fan');
-    }
-    if (state.light !== undefined && window.updateToggleUI) {
-        window.updateToggleUI(deviceId, 'lamp', state.light); // lamp maps to light
-        window.clearPendingToggle?.(deviceId, 'lamp');
-    }
-    if (state.ac !== undefined && window.updateToggleUI) {
-        window.updateToggleUI(deviceId, 'ac', state.ac);
-        window.clearPendingToggle?.(deviceId, 'ac');
-    }
-
     // Sync to Firebase
     syncStateToFirebase(deviceId, state);
+}
+
+/**
+ * Handle command response message
+ * @param {string} deviceId - Device identifier
+ * @param {Object} response - Response data { cmd_id, status }
+ */
+function handleResponseMessage(deviceId, response) {
+    console.log(`[MQTT] Response from ${deviceId}:`, response);
+    
+    const { cmd_id, status } = response;
+    
+    console.log('[MQTT] Extracted:', { cmd_id, status });
+    
+    if (!cmd_id) {
+        console.warn('[MQTT] Response missing cmd_id');
+        return;
+    }
+    
+    console.log(`[MQTT] Calling handleCommandResponse('${cmd_id}', '${status}')`);
+    
+    // Route to command callback handler
+    handleCommandResponse(cmd_id, status);
 }
 
 /**

@@ -112,11 +112,31 @@ export function rebootDevice(deviceId) {
         return;
     }
 
-    if (sendMQTTCommand(deviceId, 'reboot', {})) {
-        alert(`Reboot command sent to device "${deviceId}"!\n\nThe device will restart in a few seconds.`);
-    } else {
-        alert(`Cannot send command to device "${deviceId}"`);
+    // Find and disable the reboot button
+    const rebootBtn = document.querySelector(`button[onclick*="rebootDevice('${deviceId}')"]`);
+    if (rebootBtn) {
+        rebootBtn.disabled = true;
+        rebootBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     }
+
+    sendMQTTCommand(deviceId, 'reboot', {}, {
+        onSuccess: () => {
+            if (rebootBtn) {
+                rebootBtn.disabled = false;
+                rebootBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reboot';
+            }
+            alert(`Reboot command successful for device "${deviceId}"!\n\nThe device will restart now.`);
+        },
+        onError: (error) => {
+            if (rebootBtn) {
+                rebootBtn.disabled = false;
+                rebootBtn.innerHTML = '<i class="fa-solid fa-power-off"></i> Reboot';
+            }
+            const errorMsg = error === 'timeout' ? 'Device not responding' : 'Device error';
+            alert(`${errorMsg}: Unable to reboot device "${deviceId}".`);
+        },
+        timeout: 5000
+    });
 }
 
 /**
@@ -128,24 +148,45 @@ export function showWiFiGuideForDevice(deviceId) {
     const confirmMsg = `Are you sure you want to CONFIGURE WiFi for device "${deviceId}"?\n\nThe device will be reset to AP mode to configure new WiFi.`;
     if (!confirm(confirmMsg)) return;
 
-    const modal = document.getElementById('wifi-guide-modal');
-    const guideContent = document.getElementById('wifi-guide-content');
-
-    if (!modal || !guideContent) {
-        console.error('[Settings] WiFi guide modal not found');
+    if (!isMQTTConnected()) {
+        alert("MQTT not connected! Cannot send command.");
         return;
     }
 
-    // Send factory_reset command to MQTT broker
-    if (isMQTTConnected()) {
-        sendMQTTCommand(deviceId, 'factory_reset', {});
-        console.log(`[Settings] Sent factory_reset command to ${deviceId}`);
-    } else {
-        console.warn('[Settings] MQTT not connected, cannot send factory_reset');
+    // Find and disable the configure button
+    const configBtn = document.querySelector(`button[onclick*="showWiFiGuideForDevice('${deviceId}')"]`);
+    if (configBtn) {
+        configBtn.disabled = true;
+        configBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
     }
 
-    guideContent.innerHTML = createWiFiGuideHTML(deviceId);
-    modal.style.display = 'block';
+    // Send factory_reset command with response callback
+    sendMQTTCommand(deviceId, 'factory_reset', {}, {
+        onSuccess: () => {
+            if (configBtn) {
+                configBtn.disabled = false;
+                configBtn.innerHTML = '<i class="fa-solid fa-wifi"></i> Configure';
+            }
+            console.log(`[Settings] factory_reset successful for ${deviceId}`);
+
+            // Show WiFi guide modal
+            const modal = document.getElementById('wifi-guide-modal');
+            const guideContent = document.getElementById('wifi-guide-content');
+            if (modal && guideContent) {
+                guideContent.innerHTML = createWiFiGuideHTML(deviceId);
+                modal.style.display = 'block';
+            }
+        },
+        onError: (error) => {
+            if (configBtn) {
+                configBtn.disabled = false;
+                configBtn.innerHTML = '<i class="fa-solid fa-wifi"></i> Configure';
+            }
+            const errorMsg = error === 'timeout' ? 'Device not responding' : 'Device error';
+            alert(`${errorMsg}: Unable to configure WiFi for device "${deviceId}".`);
+        },
+        timeout: 5000
+    });
 }
 
 /**
@@ -245,13 +286,33 @@ export async function syncTimestampToDevice(deviceId, timestamp) {
     // Add 7 hours (7 * 60 * 60 = 25200 seconds) to compensate for hardware timezone
     const adjustedTimestamp = timestamp + 25200;
 
-    if (sendMQTTCommand(deviceId, 'set_timestamp', { timestamp: adjustedTimestamp })) {
-        const timeStr = new Date(adjustedTimestamp * 1000).toLocaleString('vi-VN');
-        alert(`Sent time to device "${deviceId}"!\n\nTime (UTC+7): ${timeStr}`);
-        closeManualTimeModal();
-    } else {
-        alert(`Cannot send command to device "${deviceId}"`);
+    // Get apply button to show loading state
+    const applyBtn = document.querySelector('#manual-time-modal button[onclick*="applyManualTime"]');
+    if (applyBtn) {
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Applying';
     }
+
+    sendMQTTCommand(deviceId, 'set_timestamp', { timestamp: adjustedTimestamp }, {
+        onSuccess: () => {
+            if (applyBtn) {
+                applyBtn.disabled = false;
+                applyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Apply';
+            }
+            const timeStr = new Date(adjustedTimestamp * 1000).toLocaleString('vi-VN');
+            alert(`Time synced to device "${deviceId}"!\n\nTime (UTC+7): ${timeStr}`);
+            closeManualTimeModal();
+        },
+        onError: (error) => {
+            if (applyBtn) {
+                applyBtn.disabled = false;
+                applyBtn.innerHTML = '<i class="fa-solid fa-check"></i> Apply';
+            }
+            const errorMsg = error === 'timeout' ? 'Device not responding' : 'Device error';
+            alert(`${errorMsg}: Unable to sync time to device "${deviceId}".`);
+        },
+        timeout: 5000
+    });
 }
 
 /**
@@ -279,29 +340,63 @@ export async function syncTimestampToDevices(timestamp) {
     // Add 7 hours (7 * 60 * 60 = 25200 seconds) to compensate for hardware timezone
     const adjustedTimestamp = timestamp + 25200;
 
+    // Get sync button to show loading state
+    const syncBtn = document.querySelector('#manual-time-modal button[onclick*="syncTimeToAllDevices"]');
+    if (syncBtn) {
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Syncing';
+    }
+
     try {
         const snapshot = await get(ref(db, 'devices'));
 
         if (!snapshot.exists()) {
+            if (syncBtn) {
+                syncBtn.disabled = false;
+                syncBtn.innerHTML = '<i class="fa-solid fa-globe"></i> Sync Internet';
+            }
             alert("No devices found!");
             return;
         }
 
         const devices = snapshot.val();
-        const deviceList = [];
+        const deviceIds = Object.keys(devices);
+        let successCount = 0;
+        let pendingCount = deviceIds.length;
 
-        for (const deviceId of Object.keys(devices)) {
-            if (sendMQTTCommand(deviceId, 'set_timestamp', { timestamp: adjustedTimestamp })) {
-                deviceList.push(deviceId);
+        for (const deviceId of deviceIds) {
+            sendMQTTCommand(deviceId, 'set_timestamp', { timestamp: adjustedTimestamp }, {
+                onSuccess: () => {
+                    successCount++;
+                    pendingCount--;
+                    checkAllDone();
+                },
+                onError: () => {
+                    pendingCount--;
+                    checkAllDone();
+                },
+                timeout: 5000
+            });
+        }
+
+        function checkAllDone() {
+            if (pendingCount === 0) {
+                if (syncBtn) {
+                    syncBtn.disabled = false;
+                    syncBtn.innerHTML = '<i class="fa-solid fa-globe"></i> Sync Internet';
+                }
+                const currentTime = new Date(adjustedTimestamp * 1000).toLocaleString('en-US');
+                alert(`Time synced to ${successCount}/${deviceIds.length} devices!\n\nTime (UTC+7): ${currentTime}`);
+                closeManualTimeModal();
             }
         }
 
-        const currentTime = new Date(adjustedTimestamp * 1000).toLocaleString('en-US');
-        alert(`Sent time to ${deviceList.length} devices!\n\nTime (UTC+7): ${currentTime}`);
-        closeManualTimeModal();
-
     } catch (error) {
         console.error('[Settings] Time sync error:', error);
+        if (syncBtn) {
+            syncBtn.disabled = false;
+            syncBtn.innerHTML = '<i class="fa-solid fa-globe"></i> Sync Internet';
+        }
         alert("Error sending time sync command: " + error.message);
     }
 }

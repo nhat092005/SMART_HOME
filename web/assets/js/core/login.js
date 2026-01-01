@@ -96,7 +96,7 @@ async function handleAuthSubmit(e) {
 
     // Disable submit button during request
     submitBtn.disabled = true;
-    submitBtn.textContent = isLoginMode ? 'Signing in...' : 'Signing up...';
+    submitBtn.textContent = isLoginMode ? 'Signing in' : 'Signing up';
 
     try {
         if (isLoginMode) {
