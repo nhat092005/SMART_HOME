@@ -213,6 +213,39 @@ char *json_helper_create_info(uint32_t timestamp, const char *device_id, const c
 }
 
 /**
+ * @brief Create command response JSON string
+ */
+char *json_helper_create_response(const char *cmd_id, const char *status)
+{
+    cJSON *root = cJSON_CreateObject();
+    if (root == NULL)
+    {
+        ESP_LOGE(TAG, "Failed to create JSON object");
+    }
+
+    if (cmd_id != NULL)
+    {
+        cJSON_AddStringToObject(root, "cmd_id", cmd_id);
+    }
+
+    if (status != NULL)
+    {
+        cJSON_AddStringToObject(root, "status", status);
+    }
+
+    char *json_str = cJSON_Print(root);
+    cJSON_Delete(root);
+
+    if (json_str == NULL)
+    {
+        ESP_LOGE(TAG, "Failed to print JSON");
+        return NULL;
+    }
+
+    return json_str;
+}
+
+/**
  * @brief Parse command from JSON string
  */
 cJSON *json_helper_parse_command(const char *json_str, char *cmd_id, size_t cmd_id_len,

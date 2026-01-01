@@ -110,6 +110,18 @@ char *json_helper_create_info(uint32_t timestamp, const char *device_id, const c
                               const char *ip, const char *broker, const char *firmware);
 
 /**
+ * @brief Create command response JSON string for /response topic
+ *
+ * @param[in] cmd_id Command ID
+ * @param[in] status Status string
+ *
+ * @return JSON string (caller must free) or NULL on error
+ *
+ * @note Format: {"cmd_id": "1234", "status": "success"}
+ */
+char *json_helper_create_response(const char *cmd_id, const char *status);
+
+/**
  * @brief Parse command from JSON string
  *
  * @param[in] json_str JSON string to parse

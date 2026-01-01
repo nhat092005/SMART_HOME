@@ -40,10 +40,11 @@ static mqtt_event_callback_t disconnected_callback = NULL;
 static mqtt_command_callback_t command_callback = NULL;
 
 // Dynamic topics built from Kconfig
-static char topic_data[MQTT_TOPIC_MAX_LEN];    // QoS=0, Retain=No
-static char topic_state[MQTT_TOPIC_MAX_LEN];   // QoS=1, Retain=Yes
-static char topic_info[MQTT_TOPIC_MAX_LEN];    // QoS=1, Retain=Yes
-static char topic_command[MQTT_TOPIC_MAX_LEN]; // QoS=1, Retain=No
+static char topic_data[MQTT_TOPIC_MAX_LEN];     //!< QoS=0, Retain=No
+static char topic_state[MQTT_TOPIC_MAX_LEN];    //!< QoS=1, Retain=Yes
+static char topic_info[MQTT_TOPIC_MAX_LEN];     //!< QoS=1, Retain=Yes
+static char topic_command[MQTT_TOPIC_MAX_LEN];  //!< F QoS=1, Retain=No
+static char topic_response[MQTT_TOPIC_MAX_LEN]; //!< QoS=1, Retain=Yes
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -262,6 +263,37 @@ esp_err_t mqtt_manager_publish_info(uint32_t timestamp, const char *device_id, c
 }
 
 /**
+ * @brief Publish command response
+ */
+esp_err_t mqtt_manager_publish_response(const char *cmd_id, const char *status)
+{
+    if (!mqtt_connected)
+    {
+        ESP_LOGW(TAG, "MQTT not connected, skipping response publish");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    char *json = json_helper_create_response(cmd_id, status);
+    if (json == NULL)
+    {
+        ESP_LOGE(TAG, "Failed to create response JSON");
+        return ESP_FAIL;
+    }
+
+    // Publish to response topic (QoS=1, retain)
+    int msg_id = esp_mqtt_client_publish(mqtt_client, topic_response, json, 0,
+                                         MQTT_QOS_1, MQTT_RETAIN_ON);
+
+    if (msg_id < 0)
+    {
+        ESP_LOGE(TAG, "Failed to publish response");
+    }
+
+    free(json);
+    return (msg_id >= 0) ? ESP_OK : ESP_FAIL;
+}
+
+/**
  * @brief Register command callback
  */
 void mqtt_manager_register_command_callback(mqtt_command_callback_t callback)
@@ -324,10 +356,17 @@ static void mqtt_manager_build_topics(void)
         ESP_LOGW(TAG, "Command topic truncated");
     }
 
-    ESP_LOGI(TAG, "DataData:  %s (QoS=0, Retain=No)", topic_data);
+    ret = snprintf(topic_response, sizeof(topic_response), MQTT_TOPIC_RESPONSE_FMT, base, device_id);
+    if (ret >= sizeof(topic_response))
+    {
+        ESP_LOGW(TAG, "Response topic truncated");
+    }
+
+    ESP_LOGI(TAG, "Data: %s (QoS=0, Retain=No)", topic_data);
     ESP_LOGI(TAG, "State: %s (QoS=1, Retain=Yes)", topic_state);
     ESP_LOGI(TAG, "Info: %s (QoS=1, Retain=Yes)", topic_info);
     ESP_LOGI(TAG, "Command: %s (QoS=1, Retain=No)", topic_command);
+    ESP_LOGI(TAG, "Response: %s (QoS=1, Retain=Yes)", topic_response);
 }
 
 /**

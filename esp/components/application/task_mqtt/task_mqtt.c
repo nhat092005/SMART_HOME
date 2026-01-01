@@ -204,6 +204,8 @@ void task_mqtt_on_set_device(const char *cmd_id, const char *device, int state)
 {
     ESP_LOGI(TAG, "[%s] set_device: %s to %s", cmd_id, device, state ? "ON" : "OFF");
 
+    esp_err_t result = ESP_OK;
+
     // Update internal state using registry
     int *state_ptr = task_mqtt_find_device_state(device);
     if (state_ptr != NULL)
@@ -220,20 +222,24 @@ void task_mqtt_on_set_device(const char *cmd_id, const char *device, int state)
 
     if (strcmp(device, "fan") == 0)
     {
-        device_control_set_state(DEVICE_FAN, dev_state);
+        result = device_control_set_state(DEVICE_FAN, dev_state);
     }
     else if (strcmp(device, "light") == 0)
     {
-        device_control_set_state(DEVICE_LIGHT, dev_state);
+        result = device_control_set_state(DEVICE_LIGHT, dev_state);
     }
     else if (strcmp(device, "ac") == 0)
     {
-        device_control_set_state(DEVICE_AC, dev_state);
+        result = device_control_set_state(DEVICE_AC, dev_state);
     }
     else
     {
         ESP_LOGW(TAG, "[%s] Unknown device: %s", cmd_id, device);
+        result = ESP_ERR_INVALID_ARG;
     }
+
+    // Publish response
+    mqtt_manager_publish_response(cmd_id, (result == ESP_OK) ? "success" : "error");
 
     // Publish updated state
     task_mqtt_publish_current_state();
@@ -245,6 +251,9 @@ void task_mqtt_on_set_device(const char *cmd_id, const char *device, int state)
 void task_mqtt_on_set_devices(const char *cmd_id, int fan, int light, int ac)
 {
     ESP_LOGI(TAG, "[%s] set_devices: fan=%d light=%d ac=%d", cmd_id, fan, light, ac);
+
+    esp_err_t result = ESP_OK;
+    esp_err_t ret;
 
     // Update internal state
     if (xSemaphoreTake(state_mutex, portMAX_DELAY) == pdTRUE)
@@ -258,8 +267,6 @@ void task_mqtt_on_set_devices(const char *cmd_id, int fan, int light, int ac)
         xSemaphoreGive(state_mutex);
     }
 
-    esp_err_t ret;
-
     // Control hardware
     if (fan >= 0)
     {
@@ -267,6 +274,7 @@ void task_mqtt_on_set_devices(const char *cmd_id, int fan, int light, int ac)
         if (ret != ESP_OK)
         {
             ESP_LOGE(TAG, "Failed to set fan state: %s", esp_err_to_name(ret));
+            result = ret;
         }
     }
 
@@ -276,6 +284,7 @@ void task_mqtt_on_set_devices(const char *cmd_id, int fan, int light, int ac)
         if (ret != ESP_OK)
         {
             ESP_LOGE(TAG, "Failed to set light state: %s", esp_err_to_name(ret));
+            result = ret;
         }
     }
 
@@ -285,8 +294,12 @@ void task_mqtt_on_set_devices(const char *cmd_id, int fan, int light, int ac)
         if (ret != ESP_OK)
         {
             ESP_LOGE(TAG, "Failed to set AC state: %s", esp_err_to_name(ret));
+            result = ret;
         }
     }
+
+    // Publish response
+    mqtt_manager_publish_response(cmd_id, (result == ESP_OK) ? "success" : "error");
 
     // Publish updated state
     task_mqtt_publish_current_state();
@@ -308,6 +321,9 @@ void task_mqtt_on_set_mode(const char *cmd_id, int mode)
 
     // Update mode manager
     mode_manager_set_mode(mode);
+
+    // Publish response
+    mqtt_manager_publish_response(cmd_id, "success");
 
     // Publish updated state
     task_mqtt_publish_current_state();
@@ -333,12 +349,18 @@ void task_mqtt_on_set_interval(const char *cmd_id, int interval)
 
         ESP_LOGI(TAG, "Data interval: %d seconds (synced to g_interval_time_ms: %lu ms)", interval, (unsigned long)g_interval_time_ms);
 
+        // Publish response - success
+        mqtt_manager_publish_response(cmd_id, "success");
+
         // Publish updated state
         task_mqtt_publish_current_state();
     }
     else
     {
         ESP_LOGW(TAG, "Invalid interval: %d (must be %d-%d)", interval, MIN_INTERVAL, MAX_INTERVAL);
+
+        // Publish response - error
+        mqtt_manager_publish_response(cmd_id, "error");
     }
 }
 
@@ -353,10 +375,12 @@ void task_mqtt_on_set_timestamp(const char *cmd_id, uint32_t timestamp)
     if (ret == ESP_OK)
     {
         ESP_LOGI(TAG, "Timestamp updated successfully");
+        mqtt_manager_publish_response(cmd_id, "success");
     }
     else
     {
         ESP_LOGE(TAG, "Failed to set timestamp: %s", esp_err_to_name(ret));
+        mqtt_manager_publish_response(cmd_id, "error");
     }
 }
 
@@ -366,6 +390,9 @@ void task_mqtt_on_set_timestamp(const char *cmd_id, uint32_t timestamp)
 void task_mqtt_on_get_status(const char *cmd_id)
 {
     ESP_LOGI(TAG, "[%s] get_status publishing all topics", cmd_id);
+
+    // Publish response first
+    mqtt_manager_publish_response(cmd_id, "success");
 
     // Publish all topics
     task_mqtt_publish_sensor_data();
@@ -380,6 +407,9 @@ void task_mqtt_on_reboot(const char *cmd_id)
 {
     ESP_LOGW(TAG, "[%s] Reboot requested", cmd_id);
 
+    // Publish response before reboot
+    mqtt_manager_publish_response(cmd_id, "success");
+
     // Start delayed reboot task
     xTaskCreate(task_mqtt_delayed_reboot_task, "reboot_task", 2048, (void *)cmd_id, 1, NULL);
 }
@@ -390,6 +420,9 @@ void task_mqtt_on_reboot(const char *cmd_id)
 void task_mqtt_on_factory_reset(const char *cmd_id)
 {
     ESP_LOGW(TAG, "[%s] Factory reset requested", cmd_id);
+
+    // Publish response before factory reset
+    mqtt_manager_publish_response(cmd_id, "success");
 
     // Start delayed factory reset task
     xTaskCreate(task_mqtt_delayed_factory_reset_task, "factory_reset_task", 2048, (void *)cmd_id, 1, NULL);

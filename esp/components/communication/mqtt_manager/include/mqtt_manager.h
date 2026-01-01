@@ -121,6 +121,18 @@ esp_err_t mqtt_manager_publish_info(uint32_t timestamp, const char *device_id, c
                                     const char *ip, const char *broker, const char *firmware);
 
 /**
+ * @brief Publish command response to {base}/{device_id}/response
+ *
+ * @param[in] cmd_id Command ID (e.g., "a1b2")
+ * @param[in] status Status string (e.g., "success", "error")
+ *
+ * @return ESP_OK on success, error code otherwise
+ *
+ * @note QoS: 1, Retain: Yes
+ */
+esp_err_t mqtt_manager_publish_response(const char *cmd_id, const char *status);
+
+/**
  * @brief Register callback for incoming commands
  *
  * @param[in] callback Function to handle commands

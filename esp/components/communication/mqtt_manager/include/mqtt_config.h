@@ -30,9 +30,10 @@
 #define MQTT_KEEP_ALIVE_SEC     CONFIG_MQTT_KEEP_ALIVE_SEC
 
 // Topic format strings - 4 Topics Structure
-#define MQTT_TOPIC_DATA_FMT     "%s/%s/data"     // QoS=0, Retain=No
-#define MQTT_TOPIC_STATE_FMT    "%s/%s/state"    // QoS=1, Retain=Yes
-#define MQTT_TOPIC_INFO_FMT     "%s/%s/info"     // QoS=1, Retain=Yes
-#define MQTT_TOPIC_COMMAND_FMT  "%s/%s/command"  // QoS=1, Retain=No
+#define MQTT_TOPIC_DATA_FMT     "%s/%s/data"     //!< QoS=0, Retain=No
+#define MQTT_TOPIC_STATE_FMT    "%s/%s/state"    //!< QoS=1, Retain=Yes
+#define MQTT_TOPIC_INFO_FMT     "%s/%s/info"     //!< QoS=1, Retain=Yes
+#define MQTT_TOPIC_COMMAND_FMT  "%s/%s/command"  //!< QoS=1, Retain=No
+#define MQTT_TOPIC_RESPONSE_FMT "%s/%s/response" //!< QoS=1, Retain=Yes
 
 #endif /* MQTT_CONFIG_H */

@@ -446,5 +446,6 @@ static void mqtt_callback_internal_command_handler(const char *cmd_id, const cha
     else
     {
         ESP_LOGW(TAG, "Unknown command: %s (ID: %s)", command, cmd_id);
+        mqtt_manager_publish_response(cmd_id, "error");
     }
 }
