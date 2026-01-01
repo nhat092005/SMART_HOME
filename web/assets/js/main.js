@@ -269,7 +269,7 @@ async function handleEditDevice(e) {
     const saveBtn = document.querySelector('#edit-form button[type="submit"]');
     if (saveBtn) {
         saveBtn.disabled = true;
-        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving...';
+        saveBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Saving';
     }
 
     try {
