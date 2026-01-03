@@ -18,7 +18,7 @@
 
 // Buffer sizes
 #define MQTT_TOPIC_MAX_LEN 128
-#define MQTT_CMD_ID_MAX_LEN 8
+#define MQTT_CMD_ID_MAX_LEN 128
 #define MQTT_CMD_MAX_LEN 32
 
 /* Exported variables --------------------------------------------------------*/
