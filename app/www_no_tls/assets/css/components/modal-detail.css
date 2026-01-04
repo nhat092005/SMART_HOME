@@ -1,0 +1,197 @@
+/**
+  * Modal Popup Styles - Mobile Optimized
+  * File riêng cho report detail modal
+  */
+
+/* Modal Overlay */
+#report-detail.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 15px;
+}
+
+#report-detail.modal[style*="flex"] {
+  display: flex;
+}
+
+/* Modal Content - Center Style */
+.report-detail-modal-content {
+  background: white;
+  width: 100%;
+  max-width: 400px;
+  max-height: 85vh;
+  border-radius: 12px;
+  padding: 15px;
+  overflow-y: auto;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Report Title - in modal-header */
+.report-detail-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Stats Row - Compact Horizontal */
+.stats-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.stat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 5px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 2px solid transparent;
+}
+
+.stat-box.temp {
+  background: #fff5f5;
+  color: #e53e3e;
+}
+
+.stat-box.humid {
+  background: #ebf8ff;
+  color: #3182ce;
+}
+
+.stat-box.light {
+  background: #fffff0;
+  color: #d69e2e;
+}
+
+.stat-box.active,
+.stat-box:active {
+  border-color: currentColor;
+  transform: scale(0.98);
+}
+
+.stat-box i {
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 1rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Control Section - Horizontal */
+.control-section {
+  background: var(--bg-primary);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 12px;
+}
+
+.control-row {
+  display: flex;
+  justify-content: space-around;
+  gap: 10px;
+}
+
+.control-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.control-item i {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+}
+
+/* Switch Toggle - Compact */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+}
+
+input:checked + .slider {
+  background-color: var(--success-color);
+}
+
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+.slider.round {
+  border-radius: 24px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* Chart Section */
+.chart-section {
+  background: white;
+  border-radius: 10px;
+  padding: 10px;
+  border: 1px solid var(--border-light);
+}
+
+.chart-section canvas {
+  width: 100% !important;
+  height: 200px !important;
+}

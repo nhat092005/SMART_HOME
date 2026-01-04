@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="description" content="SMART HOME IOT" />
+    <meta
+      name="author"
+      content="Lê Quang Minh Nhật, Thái Hữu Lợi, Trần Hữu Đạo"
+    />
+    <meta name="theme-color" content="#2563eb" />
+    <title>SMART HOME IOT</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <links
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"
+    ></script>
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"
+    ></script>
+  </head>
+
+  <body>
+    <noscript>
+      <div class="noscript-warning">
+        <h2>JavaScript is Disabled</h2>
+        <p>
+          This application requires JavaScript to function properly. Please
+          enable JavaScript in your browser settings and reload the page.
+        </p>
+      </div>
+    </noscript>
+    <nav class="bottom-nav" id="bottom-nav">
+      <div class="nav-menu">
+        <a
+          href="#"
+          class="nav-item active"
+          onclick="switchTab('dashboard')"
+          aria-label="Home"
+        >
+          <i class="fa-solid fa-house" aria-hidden="true"></i>
+        </a>
+        <a
+          href="#"
+          class="nav-item"
+          onclick="switchTab('report')"
+          aria-label="Dashboard"
+        >
+          <i class="fa-solid fa-chart-line" aria-hidden="true"></i>
+        </a>
+        <a
+          href="#"
+          class="nav-item"
+          onclick="switchTab('notification')"
+          aria-label="Notifications"
+        >
+          <i class="fa-solid fa-bell" aria-hidden="true"></i>
+          <span
+            class="notification-badge"
+            id="notification-badge"
+            style="display: none"
+            >0</span
+          >
+        </a>
+        <a
+          href="#"
+          class="nav-item"
+          onclick="switchTab('setting')"
+          aria-label="Settings"
+        >
+          <i class="fa-solid fa-gear" aria-hidden="true"></i>
+        </a>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <!-- Device grid container - populated by JavaScript -->
+      <div class="grid-container" id="device-grid"></div>
+
+      <div id="report-detail" class="modal">
+        <div class="modal-content report-detail-modal-content">
+          <div class="modal-header">
+            <h3 id="report-title" class="report-detail-title"></h3>
+            <span class="close-button" onclick="closeReportDetail()"
+              >&times;</span
+            >
+          </div>
+
+          <!-- Stats Row - Compact -->
+          <div class="stats-row">
+            <div
+              class="stat-box temp"
+              id="btn-chart-temp"
+              onclick="selectChartType('temp')"
+            >
+              <i class="fa-solid fa-temperature-half"></i>
+              <span class="stat-value" id="detail-temp">--°C</span>
+            </div>
+            <div
+              class="stat-box humid"
+              id="btn-chart-humid"
+              onclick="selectChartType('humid')"
+            >
+              <i class="fa-solid fa-droplet"></i>
+              <span class="stat-value" id="detail-humid">--%</span>
+            </div>
+            <div
+              class="stat-box light"
+              id="btn-chart-light"
+              onclick="selectChartType('light')"
+            >
+              <i class="fa-solid fa-sun"></i>
+              <span class="stat-value" id="detail-light">--Lux</span>
+            </div>
+          </div>
+
+          <!-- Quick Control - Moved up -->
+          <div class="control-section">
+            <div class="control-row">
+              <div class="control-item">
+                <i class="fa-solid fa-fan"></i>
+                <label class="switch">
+                  <input
+                    type="checkbox"
+                    id="toggle-fan"
+                    onchange="toggleFeature('fan')"
+                  />
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="control-item">
+                <i class="fa-solid fa-lightbulb"></i>
+                <label class="switch">
+                  <input
+                    type="checkbox"
+                    id="toggle-lamp"
+                    onchange="toggleFeature('lamp')"
+                  />
+                  <span class="slider round"></span>
+                </label>
+              </div>
+              <div class="control-item">
+                <i class="fa-solid fa-snowflake"></i>
+                <label class="switch">
+                  <input
+                    type="checkbox"
+                    id="toggle-ac"
+                    onchange="toggleFeature('ac')"
+                  />
+                  <span class="slider round"></span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Chart Section -->
+          <div class="chart-section">
+            <canvas id="myChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notification View -->
+      <div
+        id="notification-view"
+        class="notification-view-container"
+        style="display: none"
+      >
+        <div class="notification-header">
+          <h2 class="notification-title">
+            <i class="fa-solid fa-bell"></i> Notifications
+          </h2>
+          <button
+            class="btn-clear-all"
+            id="btn-clear-notifications"
+            onclick="window.clearAllNotifications()"
+          >
+            <i class="fa-solid fa-trash"></i> Clear All
+          </button>
+        </div>
+
+        <div class="notification-list" id="notification-list">
+          <div class="notification-empty">
+            <i class="fa-regular fa-bell-slash"></i>
+            <p>No notifications yet</p>
+          </div>
+        </div>
+      </div>
+
+      <div id="setting-view" class="settings-view-container">
+        <div class="card settings-card">
+          <!-- Display Day, Date and Clock -->
+          <div class="clock-display">
+            <div id="current-date" class="clock-date">
+              <!-- JavaScript will update -->
+            </div>
+            <div id="current-time" class="clock-time">
+              <!-- JavaScript will update -->
+            </div>
+          </div>
+
+          <!-- Device table with full information -->
+          <div class="device-table-container">
+            <table class="data-table settings-table">
+              <thead>
+                <tr class="table-center-header">
+                  <th class="col-stt">No.</th>
+                  <th>Room Name</th>
+                  <th>ID</th>
+                  <th>Time</th>
+                  <th>WiFi</th>
+                </tr>
+              </thead>
+              <tbody id="device-info-table">
+                <tr>
+                  <td colspan="5" class="table-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i> Loading...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- User Account Section -->
+          <div class="account-section">
+            <div class="account-header">
+              <i class="fa-regular fa-user"></i>
+              <span>Tài khoản</span>
+            </div>
+            <div class="account-info">
+              <div class="account-email">
+                <span class="account-label">Email:</span>
+                <span id="user-email-display">Loading...</span>
+              </div>
+              <div class="connection-status">
+                <span id="mqtt-status" class="badge error">MQTT</span>
+                <span id="db-status" class="badge warning">Firebase</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              id="logout-btn"
+              class="btn-logout-full"
+              title="Log Out"
+              aria-label="Log Out"
+            >
+              <i class="fa-solid fa-right-from-bracket" aria-hidden="true"></i>
+              <span>Đăng xuất</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal WiFi Guide -->
+      <div id="wifi-guide-modal" class="wifi-modal-overlay">
+        <div class="wifi-modal-wrapper">
+          <div class="wifi-modal-content">
+            <span class="popup-close-btn" onclick="closeWiFiGuideModal()"
+              >&times;</span
+            >
+            <h3 class="wifi-modal-title">
+              <i class="fa-solid fa-wifi"></i> WiFi Configuration Guide
+            </h3>
+            <div id="wifi-guide-content" class="wifi-modal-body">
+              <!-- Content will be added by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Modal Manual Time Adjustment (placed outside all views) -->
+      <div id="manual-time-modal" class="time-modal-overlay">
+        <div class="time-modal-wrapper">
+          <div class="time-modal-content">
+            <span class="popup-close-btn" onclick="closeManualTimeModal()"
+              >&times;</span
+            >
+            <h3 class="time-modal-title">
+              <i class="fa-solid fa-calendar-days"></i> Manual Time Adjustment
+            </h3>
+
+            <div class="time-input-group">
+              <label class="time-input-label">
+                <i class="fa-solid fa-calendar"></i> Select Date:
+              </label>
+              <input
+                type="date"
+                id="manual-date-input"
+                class="time-input-field"
+              />
+            </div>
+
+            <div class="time-input-group">
+              <label class="time-input-label">
+                <i class="fa-solid fa-clock"></i> Select Time:
+              </label>
+              <input
+                type="time"
+                id="manual-time-input"
+                class="time-input-field"
+              />
+            </div>
+
+            <div class="time-preview-box">
+              <div class="time-preview-label">Selected Time:</div>
+              <div id="manual-time-preview" class="time-preview-value">
+                Not selected
+              </div>
+            </div>
+
+            <div class="time-modal-actions">
+              <button
+                type="button"
+                onclick="applyManualTime()"
+                class="btn-modal-apply"
+              >
+                <i class="fa-solid fa-check"></i> Apply
+              </button>
+              <button
+                type="button"
+                onclick="syncTimeToAllDevices()"
+                class="btn-modal-sync"
+              >
+                <i class="fa-solid fa-globe"></i> Sync Internet
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- Add New Device -->
+    <div id="add-modal" class="modal modal-center">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Add New Device</h3>
+          <span class="close">&times;</span>
+        </div>
+        <form id="add-form">
+          <div class="form-group">
+            <label>Room Name / Location</label>
+            <input
+              type="text"
+              id="dev-name"
+              placeholder="E.g., Living Room"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label>Chip ID (ESP32 ID)</label>
+            <input
+              type="text"
+              id="dev-id"
+              placeholder="E.g., esp32_01"
+              required
+            />
+            <small>Must match the code uploaded to the ESP32</small>
+          </div>
+          <div class="form-group">
+            <label>Measurement Interval (Seconds)</label>
+            <input type="number" id="dev-interval" value="30" min="5" />
+          </div>
+          <button type="submit" class="btn-primary btn-full-width">
+            Save Device
+          </button>
+        </form>
+      </div>
+    </div>
+    <!-- Edit Device -->
+    <div id="edit-modal" class="modal modal-center">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Edit Device</h3>
+          <span class="closeBtn">&times;</span>
+        </div>
+        <form id="edit-form">
+          <div class="form-group">
+            <label>Chip ID:</label>
+            <input
+              type="text"
+              id="edit-dev-id"
+              disabled
+              class="input-disabled"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>New Display Name:</label>
+            <input type="text" id="edit-dev-name" required />
+          </div>
+
+          <div class="form-group">
+            <label>Measurement Interval (Seconds):</label>
+            <input type="number" id="edit-dev-interval" min="5" required />
+          </div>
+
+          <div class="modal-actions-row">
+            <button type="submit" class="btn-primary btn-flex-fill">
+              Save Changes
+            </button>
+            <button
+              type="button"
+              id="btn-delete-device"
+              class="btn-danger btn-flex-fill"
+            >
+              <i class="fa-solid fa-trash"></i> Delete Device
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script type="module" src="assets/js/main.js"></script>
+  </body>
+</html>

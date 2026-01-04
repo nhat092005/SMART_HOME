@@ -11,7 +11,6 @@
 #include "mqtt_client.h"
 #include "esp_log.h"
 #include "esp_system.h"
-#include "esp_crt_bundle.h"
 #include <string.h>
 
 /* Private defines -----------------------------------------------------------*/
@@ -90,11 +89,8 @@ esp_err_t mqtt_manager_init(void)
         .broker = {
             .address = {
                 .hostname = MQTT_BROKER_URI,
-                .transport = MQTT_TRANSPORT_OVER_SSL,
+                .transport = MQTT_TRANSPORT_OVER_TCP,
                 .port = MQTT_BROKER_PORT,
-            },
-            .verification = {
-                .crt_bundle_attach = esp_crt_bundle_attach,
             }},
         .credentials = {.client_id = MQTT_DEVICE_ID, .username = MQTT_USERNAME, .authentication = {
                                                                                     .password = MQTT_PASSWORD,
@@ -465,8 +461,7 @@ static void mqtt_manager_event_handler(void *handler_args, esp_event_base_t base
         ESP_LOGE(TAG, "MQTT Error");
         if (event->error_handle->error_type == MQTT_ERROR_TYPE_TCP_TRANSPORT)
         {
-            ESP_LOGE(TAG, "TLS error: 0x%x", event->error_handle->esp_tls_last_esp_err);
-            ESP_LOGE(TAG, "TLS stack: 0x%x", event->error_handle->esp_tls_stack_err);
+            ESP_LOGE(TAG, "TCP transport error");
             ESP_LOGE(TAG, "Socket errno: %d (%s)", event->error_handle->esp_transport_sock_errno,
                      strerror(event->error_handle->esp_transport_sock_errno));
         }
