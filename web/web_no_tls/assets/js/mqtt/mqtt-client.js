@@ -80,30 +80,10 @@ let mqttRetryCount = 0;
 let commandCounter = 0;
 
 /**
- * Load MQTT configuration from localStorage or use defaults
+ * Load MQTT configuration - always uses default settings
  * @returns {Object} MQTT configuration object
  */
 function loadMQTTConfig() {
-    const savedConfig = localStorage.getItem('mqtt_config');
-
-    if (savedConfig) {
-        try {
-            const config = JSON.parse(savedConfig);
-            return {
-                host: config.host || "broker.emqx.io",
-                port: config.port || 8083,
-                path: config.path || "/mqtt",
-                useSSL: config.useSSL || false,
-                username: config.username || "",
-                password: config.password || "",
-                keepalive: config.keepalive || 60,
-                clientId: generateClientId()
-            };
-        } catch (error) {
-            console.error('[MQTT] Error loading config:', error.message);
-        }
-    }
-
     // Default configuration - Local Mosquitto Broker (No TLS)
     return {
         host: "raspberrypi.local",  // or use IP address like "192.168.1.100"
