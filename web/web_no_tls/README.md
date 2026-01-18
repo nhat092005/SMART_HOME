@@ -1,10 +1,168 @@
-# Web Dashboard
+# Smart Home Web Dashboard - Non-TLS Version
 
 ## Overview
 
-The web dashboard is a modern, responsive single-page application (SPA) for monitoring and controlling the Smart Home IoT system. It provides real-time device management, sensor data visualization, historical data export, and system configuration through an intuitive user interface.
+Real-time web-based monitoring and control system for Smart Home IoT devices without SSL/TLS encryption. Implements bidirectional communication using MQTT over WebSocket (non-secure) and Firebase Realtime Database for data persistence. Designed for local network deployments.
+
+## Key Differences from TLS Version
+
+- **MQTT Connection**: WebSocket without SSL (ws:// instead of wss://)
+- **Security Level**: No encryption for MQTT communication
+- **Use Case**: Local network deployment only
+- **Firebase**: Hosted on Firebase with HTTPS (Firebase always uses HTTPS)
+- **Performance**: Slightly lower latency without TLS overhead
 
 ## Features
+
+- Real-time device control via MQTT WebSocket (non-TLS)
+- Live sensor data visualization (temperature, humidity, light)
+- Interactive charts with Chart.js
+- Historical data export to Excel
+- Device management (add/edit/delete)
+- MQTT and Firebase configuration
+- User authentication with Firebase Auth
+- Responsive single-page application
+
+## System Architecture
+
+### High-Level System Flowchart
+
+```
+[START]
+   |
+   v
+(Initialize Application)
+   |
+   v
+<Authentication Required?>----YES--->(Redirect to Login Page)
+   |                                          |
+   NO                                         v
+   |                                    (User Login/Register)
+   |                                          |
+   v                                          v
+(Initialize Firebase Connection)---->(Authentication Success?)
+   |                                          |
+   v                                         YES
+(Initialize MQTT Client)                      |
+   |                                          v
+   v                                   (Redirect to Dashboard)
+(Subscribe to Device Topics)                  |
+   |<-------------------------------------
+   v
+(Start Real-Time Listeners)
+   |
+   v
+<User Action?>
+   |
+   +--->(Device Control)--->(Send MQTT Command)--->(ESP32 Device)
+   |                                                      |
+   +--->(View Charts)--->(Fetch Historical Data)         v
+   |                                           (Device Processes Command)
+   +--->(Export Data)--->(Filter & Download)             |
+   |                                                      v
+## Security Warning
+
+This version uses MQTT over WebSocket without SSL/TLS encryption. Data transmitted between browser and MQTT broker is not encrypted. Use only on trusted local networks. Not recommended for internet-facing deployments.
+
+## Technology Stack
+
+- HTML5 with semantic markup
+- CSS3 with modern features (Grid, Flexbox, Custom Properties)
+- JavaScript ES6 modules
+- Chart.js for data visualization
+- Firebase Realtime Database and Authentication (HTTPS)
+- MQTT.js for WebSocket communication (non-TLS)
+- SheetJS for Excel export
+(Receive MQTT Messages)<--------------------------------+
+   |
+   v
+(Update Firebase Database)
+   |
+   v
+(Firebase Listeners Triggered)
+   |
+   v
+(Update UI Components)
+   |
+   v
+<Continue?>----YES-->(Back to User Action)
+   |
+   NO
+   v
+[END]
+```
+
+### Data Flow Architecture
+
+```
+ESP32 Devices Layer
+    |
+    | (MQTT Publish)
+    v
+MQTT Broker (Mosquitto)
+    |
+    | (WebSocket)
+    v
+Web Dashboard (JavaScript)
+    |
+    +---> MQTT Handler ----> Firebase Sync ----> Firebase Database
+    |
+    +---> UI Update <---- Firebase Listeners <---- Firebase Database
+    |
+    v
+User Interface (HTML/CSS)
+```
+
+### Communication Protocol Flow
+
+```
+Device Control Flow:
+[User Click] --> [UI Event] --> [Generate Command ID] --> [Send MQTT Command]
+                                                                  |
+                                                                  v
+                                                         [MQTT Broker Forward]
+                                                                  |
+                                                                  v
+                                                            [ESP32 Receives]
+                                                                  |
+                                                                  v
+                                                         [Execute Command]
+                                                                  |
+                                                                  v
+                                                   [Publish Response Message]
+                                                                  |
+                                                                  v
+                                         [Dashboard Receives Response]
+                                                                  |
+                                                                  v
+                                               [Resolve Pending Command]
+                                                                  |
+                                                                  v
+                                                          [Update UI State]
+
+Sensor Data Flow:
+[ESP32 Sensor Reading] --> [MQTT Publish Data Topic] --> [MQTT Broker]
+                                                                |
+                                                                v
+                                                 [Dashboard MQTT Handler]
+                                                                |
+                                                                v
+                                                   [Parse Sensor Data]
+                                                                |
+                                                                v
+                                          [Sync to Firebase Database]
+                                                                |
+                                                                v
+                                              [Firebase Listener Triggered]
+                                                                |
+                                                                v
+                                                 [Update Device Card UI]
+                                                                |
+                                                                v
+                                                    [Update Chart Data]
+```
+
+## Core Features and Modules
 
 ### Real-time Device Control
 - **Device Management** - Add, edit, and delete devices with unique identifiers
