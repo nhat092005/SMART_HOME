@@ -1,18 +1,29 @@
-# ESP32 Smart Home System
+# ESP32 Smart Home System - Demo Version
 
 ## Overview
 
-IoT-based Smart Home system built on ESP32 using ESP-IDF framework. Features WiFi provisioning, MQTT communication over SSL, sensor monitoring, device control, and OLED display interface.
+Demonstration build of ESP32 Smart Home system with MQTT over SSL/TLS. Includes embedded web interface for testing and development purposes. Built on ESP-IDF v5.x framework with production-ready security features.
+
+## Key Differences from Production Version
+
+- **Embedded Web Interface**: HTML/CSS/JS files compiled into firmware
+- **Demo Credentials**: Pre-configured test credentials for quick setup
+- **Extended Logging**: Verbose debug output for development
+- **Test Mode Support**: Additional debugging endpoints
 
 ## Features
 
-- WiFi station mode with captive portal provisioning
-- MQTT over SSL for secure IoT communication
-- Environmental monitoring (temperature, humidity, light)
-- Device control (fan, light, AC) via buttons and MQTT commands
-- OLED display with real-time clock
-- Status LED indicators
-- NVS persistence for settings
+- WiFi station mode with captive portal fallback
+- MQTT over SSL/TLS for secure communication (port 8883)
+- Embedded web interface (HTML/CSS/JS in SPIFFS)
+- Environmental monitoring: temperature, humidity, light intensity
+- Device control: 3 relay outputs (fan, light, AC)
+- Real-time clock with DS3231
+- 128x64 OLED display interface
+- 5 button inputs with debouncing
+- 3-color status LED indicators
+- NVS persistence for configuration
+- FreeRTOS multi-task architecture
 
 ## Hardware Requirements
 
@@ -66,6 +77,24 @@ esp/
             sensor_reader/      # Unified sensor reading
         utilities/          # Helper modules
             json_helper/        # JSON parsing/creation
+```
+
+## Demo-Specific Features
+
+### Embedded Web Interface
+
+- **Files**: index.html, style.css, script.js compiled into firmware
+- **Storage**: SPIFFS partition (960KB)
+- **Access**: http://192.168.4.1 (AP mode) or device IP (STA mode)
+- **Features**: Live sensor data, device control, WiFi configuration
+
+### Pre-configured Settings
+
+```c
+// Default demo credentials
+#define DEMO_WIFI_SSID      "SmartHome_Demo"
+#define DEMO_WIFI_PASSWORD  "demo1234"
+#define DEMO_MQTT_BROKER    "mqtt://test.mosquitto.org:8883"
 ```
 
 ## Build and Flash
@@ -176,6 +205,34 @@ Configured via menuconfig. Default pins:
 | Button AC | Configurable |
 | LED Device | Configurable |
 | LED WiFi | Configurable |
+| LED MQTT | Configurable |
+| Relay Fan | Configurable |
+| Relay Light | Configurable |
+| Relay AC | Configurable |
+
+## Version Comparison
+
+| Feature | esp (Production) | esp_demo (This) | esp_no_tls | esp_no_tls_demo |
+|---------|------------------|-----------------|------------|------------------|
+| MQTT Security | SSL/TLS (8883) | SSL/TLS (8883) | TCP (1883) | TCP (1883) |
+| Web Interface | Minimal | Embedded | Minimal | Embedded |
+| Memory Usage | Standard | High | Low | Medium |
+| Certificate Required | Yes | Yes | No | No |
+| Debugging | Standard | Verbose | Standard | Verbose |
+| Use Case | Production | Development | Local Network | Local Testing |
+
+## License
+
+MIT License
+
+## Related Documentation
+
+- [main/README.md](main/README.md) - Application entry point
+- [components/application/README.md](components/application/README.md) - Business logic
+- [components/communication/README.md](components/communication/README.md) - Network layer
+- [components/hardware/README.md](components/hardware/README.md) - Hardware abstraction
+- [components/sensor/README.md](components/sensor/README.md) - Sensor drivers
+- [components/utilities/README.md](components/utilities/README.md) - Helper modules
 | LED MQTT | Configurable |
 | Relay Fan | Configurable |
 | Relay Light | Configurable |
