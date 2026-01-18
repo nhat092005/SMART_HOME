@@ -1,18 +1,35 @@
-# ESP32 Smart Home System
+# ESP32 Smart Home System - Demo Version (Non-TLS)
 
 ## Overview
 
-IoT-based Smart Home system built on ESP32 using ESP-IDF framework. Features WiFi provisioning, MQTT communication over SSL, sensor monitoring, device control, and OLED display interface.
+Demonstration build of ESP32 Smart Home system without SSL/TLS encryption. Combines embedded web interface with lightweight MQTT over TCP for development and testing. Built on ESP-IDF v5.x framework.
+
+## Key Differences from Production Version
+
+- **No TLS/SSL**: MQTT over TCP (port 1883) for reduced overhead
+- **Embedded Web Interface**: HTML/CSS/JS files compiled into firmware
+- **Demo Credentials**: Pre-configured test credentials
+- **Extended Logging**: Verbose debug output for development
+- **Test Mode Support**: Additional debugging endpoints
+- **Reduced Memory**: Lower memory requirements than TLS version
+
+## Security Warning
+
+This version transmits data in plaintext. Use only for development, testing, or on isolated local networks. Not suitable for production deployments.
 
 ## Features
 
-- WiFi station mode with captive portal provisioning
-- MQTT over SSL for secure IoT communication
-- Environmental monitoring (temperature, humidity, light)
-- Device control (fan, light, AC) via buttons and MQTT commands
-- OLED display with real-time clock
-- Status LED indicators
-- NVS persistence for settings
+- WiFi station mode with captive portal fallback
+- MQTT over TCP for unencrypted communication (port 1883)
+- Embedded web interface (HTML/CSS/JS in SPIFFS)
+- Environmental monitoring: temperature, humidity, light intensity
+- Device control: 3 relay outputs (fan, light, AC)
+- Real-time clock with DS3231
+- 128x64 OLED display interface
+- 5 button inputs with debouncing
+- 3-color status LED indicators
+- NVS persistence for configuration
+- FreeRTOS multi-task architecture
 
 ## Hardware Requirements
 
@@ -50,7 +67,7 @@ esp/
             task_wifi/          # WiFi event handling
         communication/      # Network layer
             wifi_manager/       # WiFi STA/AP management
-            mqtt_manager/       # MQTT client
+            mqtt_manager/       # MQTT client (TCP only)
             webserver/          # HTTP provisioning server
         hardware/           # Hardware abstraction
             button_handler/     # Button input handling
@@ -67,6 +84,31 @@ esp/
         utilities/          # Helper modules
             json_helper/        # JSON parsing/creation
 ```
+
+## Demo-Specific Features
+
+### Embedded Web Interface
+
+- **Files**: index.html, style.css, script.js compiled into firmware
+- **Storage**: SPIFFS partition (960KB)
+- **Access**: http://192.168.4.1 (AP mode) or device IP (STA mode)
+- **Features**: Live sensor data, device control, WiFi configuration
+
+### Non-TLS Configuration
+
+```c
+// Demo MQTT configuration (non-TLS)
+#define DEMO_MQTT_BROKER    "mqtt://test.mosquitto.org:1883"
+#define MQTT_TRANSPORT      MQTT_TRANSPORT_OVER_TCP
+#define DEMO_WIFI_SSID      "SmartHome_Demo"
+#define DEMO_WIFI_PASSWORD  "demo1234"
+```
+
+### Memory Savings
+
+- **Heap**: ~40KB saved (no mbedTLS)
+- **Stack**: Reduced MQTT task stack (4096 bytes)
+- **Flash**: ~200KB saved (no certificate store)
 
 ## Build and Flash
 
@@ -176,6 +218,34 @@ Configured via menuconfig. Default pins:
 | Button AC | Configurable |
 | LED Device | Configurable |
 | LED WiFi | Configurable |
+| LED MQTT | Configurable |
+| Relay Fan | Configurable |
+| Relay Light | Configurable |
+| Relay AC | Configurable |
+
+## Version Comparison
+
+| Feature | esp (Production) | esp_demo | esp_no_tls | esp_no_tls_demo (This) |
+|---------|------------------|----------|------------|------------------------|
+| MQTT Security | SSL/TLS (8883) | SSL/TLS (8883) | TCP (1883) | TCP (1883) |
+| Web Interface | Minimal | Embedded | Minimal | Embedded |
+| Memory Usage | Standard | High | Low | Medium |
+| Certificate Required | Yes | Yes | No | No |
+| Debugging | Standard | Verbose | Standard | Verbose |
+| Use Case | Production | Development | Local Network | Local Testing |
+
+## License
+
+MIT License
+
+## Related Documentation
+
+- [main/README.md](main/README.md) - Application entry point
+- [components/application/README.md](components/application/README.md) - Business logic
+- [components/communication/README.md](components/communication/README.md) - Network layer
+- [components/hardware/README.md](components/hardware/README.md) - Hardware abstraction
+- [components/sensor/README.md](components/sensor/README.md) - Sensor drivers
+- [components/utilities/README.md](components/utilities/README.md) - Helper modules
 | LED MQTT | Configurable |
 | Relay Fan | Configurable |
 | Relay Light | Configurable |
